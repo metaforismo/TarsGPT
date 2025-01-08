@@ -5,7 +5,7 @@ Welcome to the detailed guide for building your own replica of TARS, the iconic 
 ## Introduction
 
 TARS, the iconic robot from the film Interstellar, has been a source of inspiration for many robotics and movie enthusiasts. Thanks to the work of Charles Diaz and other contributors, it is now possible to build a functional replica of TARS using easily accessible components and 3D printing techniques. This guide will provide you with all the information necessary to complete the TarsGPT project.
-![TARS](https://github.com/user-attachments/assets/e7744f59-87bc-43ae-b9db-1359bfe3d03f)
+![TARS](https://github.com/user-attachments/assets/cb7f6acf-b7c4-41ff-ab1a-2640e8610c68)
 
 
 ## Original Guide
@@ -40,9 +40,9 @@ Here is a list of the components and tools needed to build TarsGPT:
 4. **Glue or Adhesive Tape** (for assembly)
 
 ### Files and Code
-[Files TARS v3_10 - Fix Case Clip from](https://github.com/poboisvert/GPTARS_Interstellar)
-[DOWNLOAD](https://fastupload.io/9f3621ef4afe07cc)
-<img width="802" alt="print" src="https://github.com/user-attachments/assets/7b5cb1da-46e2-474e-b042-02037ea474cc" />
+Files TARS v3_10 - Fix Case Clip
+[DOWNLOAD](https://uploadnow.io/f/MPLCGwg)
+<img width="802" alt="print" src="https://github.com/user-attachments/assets/17d02b00-a2b8-40b2-9ced-1ba46de68ddb" />
 
 
 ## Step-by-Step Guide
@@ -89,3 +89,81 @@ Congratulations! You have completed the construction of your TARS replica, TarsG
 For more details and updates, refer to the original guide links and join the community of TARS enthusiasts to share your experiences and discoveries.
 
 Enjoy your TarsGPT!
+
+---
+
+## Additional Resources
+
+### Software
+- **Fusion 360**: [Autodesk Fusion 360](https://www.autodesk.com/ca-en/products/fusion360/personal)
+- **Raspberry Pi OS**: [Raspberry Pi Software](https://www.raspberrypi.com/software/)
+- **Getting Started with Raspberry Pi Pico**: [Raspberry Pi Projects](https://projects.raspberrypi.org/en/projects/getting-started-with-thepico/2)
+
+### Tutorials
+- **Setting Up Raspberry Pi OS on SD Card**: [Tom's Hardware Guide](https://www.tomshardware.com/how-to/set-up-raspberrypi)
+
+### Adafruit 16-Channel PWM HAT with Raspberry Pi
+- **Videos**: [YouTube Tutorial](https://www.youtube.com/watch?v=bB-xymRI8BY)
+- **Documentation**: [Adafruit Learning System](https://learn.adafruit.com/adafruit-16-channel-pwm-servo-hat-for-raspberry-pi), [Core Electronics Guide](https://core-electronics.com.au/guides/raspberry-pi/servo-hat-raspberry-pi/)
+
+### Without HAT
+- **Videos**: [YouTube Tutorial 1](https://www.youtube.com/watch?v=ea6tSppgZlY), [YouTube Tutorial 2](https://www.youtube.com/watch?v=9jcEwn), [YouTube Tutorial 3](https://www.youtube.com/watch?v=40tZQPd3z8g)
+- **Documentation**: [Adafruit Servo Motor Lesson](https://learn.adafruit.com/adafruits-raspberry-pi-lesson-8-using-a-servo-motor/overview), [Adafruit Servo Driver Configuration](https://learn.adafruit.com/adafruit-16-channel-servo-driver-with-raspberry-pi/configuring-your-pi-for-i2c), [YouTube Tutorial 4](https://www.youtube.com/watch?v=-x2EEIUMm6A)
+
+### 3D Printing Services
+- **Steel/Stainless/Aluminium**: [Forgelabs](https://forgelabs.ca/)
+- **PLA/ABS**: [JLC 3D Printing](https://jlc3dp.com/3d-printing-quote), [Treatstock](https://www.treatstock.com/)
+
+## Hardware
+
+### Power
+- **12V to 6V 3A DC Converter**: [AliExpress](https://www.aliexpress.com/item/32968137531.html)
+- **5V DC 4A Fixed Power Adapter**: [Amazon](https://www.amazon.ca/Power-Adapter-100-240V-Transformers-Supply/dp/B087LY41PV/ref=asc_df_B08722QC75/?tag=googleshopid20\&linkCode=dff\&hvadid=682881027011\&hvpos=\&hvnetw=g\&hvrand=959679585182106901\&hvponet1143272721594\&mcid=5e13db627edd3e64951090cd0674e630\&gad_source=1\&th=1)
+- **5V 4A DC Power Adapter**: [AliExpress](https://www.aliexpress.com/item/1005004589869667.html)
+- **5V USB to DC Power Cable**: [AliExpress](https://www.aliexpress.com/item/1005007296667037.html)
+- **200000mAh Portable Solar Power Bank**: [AliExpress](https://www.aliexpress.com/item/1005006959367711.html), [AliExpress](https://www.aliexpress.com/item/1005007306992861.html)
+- **HDMI Cable**: FPV cable HDMI, HDMI-compatible, FPV HDMI ffc HDMI Ribbon Cable 90 Degree Mini/Micro HDMI to Standard HDMI PCB Connector 20pin fpv micro HDMI 15 cm
+
+### Hardware Components
+- **Servo Motors and Accessories**:
+  - [AliExpress](https://www.aliexpress.com/item/32914198349.html)
+  - [ServoCity](https://www.servocity.com/25t-lightweight-hub-horn/)
+  - [Adafruit 16-Channel 12-bit PWM/Servo Driver](https://www.adafruit.com/product/2327)
+  - [8Bitdo Zero 2 Bluetooth](https://www.aliexpress.com/item/1005006458561670.html)
+  - [LewanSoul LD-3015MG Servo](https://www.aliexpress.com/item/32787763122.html)
+  - [Futaba s3003 Servo](https://www.aliexpress.com/item/32957714272.html)
+  - [Gobilda Linkage Rod](https://www.gobilda.com/2903-series-nylon-ball-linkage-m4-24-5mm-length-4-pack)
+  - [Flexor Bolts](https://www.aliexpress.com/item/32969042589.html)
+  - [Hex Bolts](https://www.aliexpress.com/item/1005003184392748.html)
+  - [Bearing](https://www.aliexpress.com/item/4000909583668.html)
+  - [Compression Spring](https://www.aliexpress.com/item/1005005312536098.html)
+
+### CPU & Storage
+- **MicroSD Card**: [AliExpress](https://www.aliexpress.com/item/1005006693506827.html)
+- **Raspberry Pi 3B/3B+**: [Adafruit](https://www.adafruit.com/raspberrypi3bplus) or eBay
+- **Elecrow 5 inch Touchscreen**: [AliExpress](https://www.aliexpress.com/item/32889893278.html)
+
+### Battery
+- **myCharge Hub Mini**: [Target](https://www.target.com/p/mycharge-hub-mini-3350mah-2-4a-output-power-bank-with-integrated-charging-cables-silver/-/A-76625534\#lnk=sametab)
+- **Zeee 11.1V 120C 1500mAh 3S**: [Amazon](https://www.amazon.ca/Zeee-Graphene-Quadcopter-Airplane-Helicopter/dp/B08P399N54/)
+
+### Extra Features
+- **Face Recognition**: [Core Electronics Guide](https://core-electronics.com.au/guides/face-identify-raspberry-pi/)
+- **Lidar Detection**: MS200 Lidar Sensor Kit Portable 360° TOF Ranging Scanner 12m Range Support ROS1 and ROS2 For ROS Robot Raspberry Pi Jetson NANO
+- **Battery Level**: [SparkFun Tutorial](https://learn.sparkfun.com/tutorials/ltc4150-coulomb-counter-hookup-guide), [Raspberry Pi Forum](https://forums.raspberrypi.com/viewtopic.php?t=173046), [Raspberry Pi Forum](https://forums.raspberrypi.com/viewtopic.php?t=340930)
+
+### ChatGPT Integration
+- **ChatGPT Tutorial**: [YouTube Tutorial](https://www.youtube.com/watch?v=N0718RfpuWE)
+
+## Software Components
+
+### Servo Abstractor - Python
+This program automates walking functions by combining basic servo movements from the servo controller file.
+
+### TARS Runner - Python
+This file initializes TARS and handles communication with the Bluetooth remote. Run it in the terminal on your onboard computer.
+
+### Servo Controller - Python
+This script controls the basic movements of the servos in TARS using an Adafruit PCA9685 servo driver.
+
+Enjoy building your TarsGPT and exploring the endless possibilities it offers!
