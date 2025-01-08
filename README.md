@@ -38,8 +38,9 @@ Here is a list of the components and tools needed to build TarsGPT:
 4. **Glue or Adhesive Tape** (for assembly)
 
 ### Files and Code
-1. **CAD Files** (available in the original guide links)
-2. **Control Code** (available in the original guide links)
+Files TARS v3_10 - Fix Case Clip
+DOWNLOAD: https://uploadnow.io/f/MPLCGwg | https://fastupload.io/9f3621ef4afe07cc
+print
 
 ## Step-by-Step Guide
 
