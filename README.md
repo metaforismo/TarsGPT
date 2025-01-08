@@ -5,6 +5,8 @@ Welcome to the detailed guide for building your own replica of TARS, the iconic 
 ## Introduction
 
 TARS, the iconic robot from the film Interstellar, has been a source of inspiration for many robotics and movie enthusiasts. Thanks to the work of Charles Diaz and other contributors, it is now possible to build a functional replica of TARS using easily accessible components and 3D printing techniques. This guide will provide you with all the information necessary to complete the TarsGPT project.
+![TARS](https://github.com/user-attachments/assets/e7744f59-87bc-43ae-b9db-1359bfe3d03f)
+
 
 ## Original Guide
 
@@ -38,9 +40,10 @@ Here is a list of the components and tools needed to build TarsGPT:
 4. **Glue or Adhesive Tape** (for assembly)
 
 ### Files and Code
-Files TARS v3_10 - Fix Case Clip
-DOWNLOAD: https://uploadnow.io/f/MPLCGwg | https://fastupload.io/9f3621ef4afe07cc
-print
+[Files TARS v3_10 - Fix Case Clip from](https://github.com/poboisvert/GPTARS_Interstellar)
+[DOWNLOAD](https://fastupload.io/9f3621ef4afe07cc)
+<img width="802" alt="print" src="https://github.com/user-attachments/assets/7b5cb1da-46e2-474e-b042-02037ea474cc" />
+
 
 ## Step-by-Step Guide
 
