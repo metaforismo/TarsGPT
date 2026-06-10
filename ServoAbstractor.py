@@ -1,5 +1,5 @@
 import time
-import TARS_Servo_Controller3
+import ServoController as TARS_Servo_Controller3
 
 def stepForward():
 	TARS_Servo_Controller3.height_neutral_to_up()

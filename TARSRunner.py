@@ -1,7 +1,7 @@
 import evdev
 import time
-import TARS_Servo_Abstractor3
-import TARS_Servo_Controller3
+import ServoAbstractor as TARS_Servo_Abstractor3
+import ServoController as TARS_Servo_Controller3
 from evdev import InputDevice, categorize, ecodes
 import Adafruit_PCA9685
 
