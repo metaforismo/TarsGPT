@@ -1,23 +1,27 @@
-"""The hands-free voice loop: wake word -> listen -> think -> speak.
+"""The hands-free voice loop: wake word -> listen -> think -> speak (streaming).
 
-Wake word detection runs fully offline with Vosk (a tiny model recognizing just
-the wake word). Without Vosk, set push-to-talk from the web UI instead.
+Wake word detection runs fully offline with Vosk (a tiny model recognizing
+just the wake word). The reply is spoken sentence by sentence while the LLM
+is still generating, via the Speaker pipeline. Without Vosk, use push-to-talk
+from the web UI instead.
 """
 import json
 import logging
 import os
 import threading
-from . import audio, stt, tts
+from . import audio, stt
 from .config import Settings
 from .llm import Brain
+from .speech import Speaker
 
 log = logging.getLogger("tars.voice")
 
 
 class VoiceLoop:
-    def __init__(self, s: Settings, brain: Brain):
+    def __init__(self, s: Settings, brain: Brain, speaker: Speaker):
         self.s = s
         self.brain = brain
+        self.speaker = speaker
         self.running = False
         self.state = "off"  # off | waiting | listening | thinking | speaking
         self._thread = None
@@ -40,7 +44,7 @@ class VoiceLoop:
     # ----- internals -----
 
     def _loop(self):
-        if not self._wait_capable():
+        if not self._wake_capable():
             log.warning("Vosk not available: voice loop limited to push-to-talk")
             self.state = "off"
             self.running = False
@@ -50,7 +54,7 @@ class VoiceLoop:
             if self._wait_for_wake_word():
                 self._interact()
 
-    def _wait_capable(self) -> bool:
+    def _wake_capable(self) -> bool:
         try:
             import vosk  # noqa: F401
             import sounddevice  # noqa: F401
@@ -78,6 +82,7 @@ class VoiceLoop:
         self.state = "listening"
         wav = audio.record_until_silence()
         if not wav:
+            self.state = "waiting" if self.running else "off"
             return
         try:
             self.state = "thinking"
@@ -85,10 +90,10 @@ class VoiceLoop:
             if not text:
                 return
             log.info("Heard: %s", text)
-            reply = self.brain.chat(text)
-            log.info("Reply: %s", reply)
             self.state = "speaking"
-            tts.speak(reply, self.s)
+            reply = self.speaker.speak_stream(self.brain.chat_stream(text))
+            self.speaker.wait()
+            log.info("Replied: %s", reply)
         finally:
             os.unlink(wav)
             self.state = "waiting" if self.running else "off"

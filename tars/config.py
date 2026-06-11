@@ -19,6 +19,7 @@ class Settings:
     # --- AI ---
     openai_api_key: str = os.environ.get("OPENAI_API_KEY", "")
     openai_model: str = os.environ.get("TARS_MODEL", "gpt-4o-mini")
+    embedding_model: str = os.environ.get("TARS_EMBEDDING_MODEL", "text-embedding-3-small")
     # --- Voice ---
     tts_engine: str = os.environ.get("TARS_TTS", "auto")        # elevenlabs | openai | espeak | auto
     stt_engine: str = os.environ.get("TARS_STT", "auto")        # openai | vosk | auto
@@ -37,6 +38,7 @@ class Settings:
     # --- Hardware ---
     sim_mode: bool = os.environ.get("TARS_SIM", "") == "1"
     pwm_frequency: int = 60
+    battery_low_pct: int = 20
     gamepad_device: str = os.environ.get("TARS_GAMEPAD", "/dev/input/event3")
     # Servo channels on the PCA9685
     ch_center_lift: int = 0

@@ -93,9 +93,24 @@ async function send() {
   add('user', text);
   const pending = add('tars', '…');
   try {
-    const r = await fetch('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'},
-                                        body: JSON.stringify({message:text})});
-    pending.textContent = (await r.json()).reply || '(no reply)';
+    const r = await fetch('/api/chat/stream', {method:'POST', headers:{'Content-Type':'application/json'},
+                                               body: JSON.stringify({message:text})});
+    const reader = r.body.getReader();
+    const decoder = new TextDecoder();
+    let reply = '', buf = '';
+    for (;;) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, {stream: true});
+      const events = buf.split('\n\n');
+      buf = events.pop();
+      for (const ev of events) {
+        if (!ev.startsWith('data: ')) continue;
+        const data = JSON.parse(ev.slice(6));
+        if (data.delta) { reply += data.delta; pending.textContent = reply; chat.scrollTop = chat.scrollHeight; }
+      }
+    }
+    if (!reply) pending.textContent = '(no reply)';
   } catch (e) { pending.textContent = 'Connection error: ' + e; }
 }
 box.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
@@ -126,8 +141,10 @@ async function saveSettings() {
 async function poll() {
   try {
     const st = await (await fetch('/api/status')).json();
-    document.getElementById('status').textContent =
-      (st.sim ? 'SIM MODE · ' : '') + 'voice: ' + st.voice;
+    let line = (st.sim ? 'SIM MODE · ' : '') + 'voice: ' + st.voice;
+    if (st.battery_pct !== null && st.battery_pct !== undefined) line += ' · 🔋 ' + st.battery_pct + '%';
+    if (st.cpu_temp !== null && st.cpu_temp !== undefined) line += ' · ' + st.cpu_temp + '°C';
+    document.getElementById('status').textContent = line;
   } catch { document.getElementById('status').textContent = 'offline'; }
 }
 loadSettings(); poll(); setInterval(poll, 3000);

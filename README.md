@@ -8,11 +8,15 @@ TarsGPT is a **complete, self-contained robot project**: an original Python runt
 
 ## ✨ Features
 
+- 🧩 **Skills plugin system** — drop a decorated Python function in `tars/skills/` and it becomes an LLM tool automatically; 7 built-in skills
+- ⚡ **Streaming voice pipeline** — the reply is spoken sentence by sentence *while the LLM is still generating*; the web chat streams too (SSE)
 - 🗣️ **Hands-free voice AI** — offline wake word ("TARS"), Whisper or Vosk speech recognition, ElevenLabs/OpenAI/espeak text-to-speech with automatic fallback
 - 🧠 **Adjustable personality** — humor, honesty and sarcasm from 0 to 100%, changeable from the dashboard or by simply *asking the robot*
+- 💾 **Semantic long-term memory** — notes retrieved by embedding similarity (offline keyword fallback), plus explicit `remember`/`recall` skills
+- 👁️ **Vision** — the `look` skill captures a camera frame and describes the scene via multimodal GPT
+- ⏰ **Timers & proactive speech** — heartbeat scheduler: reminders and low-battery warnings spoken unprompted
 - 🦿 **Walking gaits** — step, turns, "monolith" pose; voice-commanded ("TARS, walk forward") via LLM tool-calling
-- 💾 **Long-term memory** — the robot decides what to remember and keeps it across restarts
-- 🌐 **Web dashboard** — chat, movement pad, personality sliders, voice control at `http://<pi>:8000`
+- 🌐 **Web dashboard** — streaming chat, movement pad, personality sliders, voice control, battery/CPU vitals at `http://<pi>:8000`
 - 🎮 **Gamepad driving** — 8BitDo Zero 2 support
 - 🌍 **Multilingual** — English, Italian, Spanish, French, German, Portuguese, Japanese
 - 💻 **Simulation mode** — develop everything on a laptop, no hardware needed (`--sim`)
@@ -46,10 +50,14 @@ Raspberry Pi 5 (8 GB) · PCA9685 servo driver · 4–6 MG996R + 4 MG90S servos �
 ```
 tars/                # the robot runtime (original implementation)
   app.py             # entrypoint: python -m tars.app
-  llm.py             # LLM brain, persona, move/remember/personality tools
+  llm.py             # streaming LLM brain with skill tool-calling
+  skills/            # plugin skills: move, remember/recall, look, timers, status…
+  speech.py          # sentence-streaming TTS pipeline
+  scheduler.py       # heartbeat scheduler (timers, battery watchdog)
+  memory.py          # semantic long-term memory (embeddings + offline fallback)
   voice.py stt.py tts.py audio.py
   movement/          # PCA9685 driver, gaits, gamepad
-  web/               # Flask dashboard
+  web/               # Flask dashboard (SSE streaming chat)
 servo_tester.py      # interactive servo calibration
 legacy/              # the original gamepad-only scripts (kept for reference)
 docs/                # bilingual documentation (en/, it/)
@@ -67,11 +75,15 @@ TarsGPT è un **progetto robot completo e autonomo**: un runtime Python original
 
 ## ✨ Funzionalità
 
+- 🧩 **Sistema di skill a plugin** — metti una funzione Python decorata in `tars/skills/` e diventa automaticamente un tool dell'LLM; 7 skill integrate
+- ⚡ **Pipeline vocale in streaming** — la risposta viene pronunciata frase per frase *mentre l'LLM sta ancora generando*; anche la chat web è in streaming (SSE)
 - 🗣️ **IA vocale a mani libere** — wake word offline ("TARS"), riconoscimento Whisper o Vosk, sintesi ElevenLabs/OpenAI/espeak con fallback automatico
 - 🧠 **Personalità regolabile** — umorismo, onestà e sarcasmo da 0 a 100%, modificabili dalla dashboard o semplicemente *chiedendolo al robot*
+- 💾 **Memoria semantica a lungo termine** — note recuperate per similarità di embedding (fallback offline a parole chiave), più skill esplicite `remember`/`recall`
+- 👁️ **Visione** — la skill `look` cattura un frame dalla camera e descrive la scena con GPT multimodale
+- ⏰ **Timer e parola proattiva** — scheduler heartbeat: promemoria e avvisi di batteria scarica pronunciati di sua iniziativa
 - 🦿 **Andature** — passo, svolte, posa "monolite"; comandi vocali ("TARS, cammina") via tool-calling LLM
-- 💾 **Memoria a lungo termine** — il robot decide cosa ricordare e lo conserva tra i riavvii
-- 🌐 **Dashboard web** — chat, pulsantiera movimenti, slider personalità, controllo voce su `http://<pi>:8000`
+- 🌐 **Dashboard web** — chat in streaming, pulsantiera movimenti, slider personalità, controllo voce, batteria/CPU su `http://<pi>:8000`
 - 🎮 **Guida col gamepad** — supporto 8BitDo Zero 2
 - 🌍 **Multilingua** — italiano, inglese, spagnolo, francese, tedesco, portoghese, giapponese
 - 💻 **Modalità simulazione** — sviluppa tutto su un portatile, senza hardware (`--sim`)

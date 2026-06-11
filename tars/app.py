@@ -1,4 +1,5 @@
-"""TARS entrypoint: wires servos, brain, voice loop, gamepad and web dashboard.
+"""TARS entrypoint: wires servos, skills, brain, speech, voice loop, gamepad,
+scheduler and the web dashboard together.
 
 Usage:
     python -m tars.app                 # everything
@@ -10,12 +11,33 @@ import argparse
 import logging
 import threading
 
+from . import skills
 from .config import settings
 from .llm import Brain
 from .memory import Memory
 from .movement import ServoDriver, Gaits
 from .movement import gamepad
+from .scheduler import Scheduler
+from .speech import Speaker
 from .voice import VoiceLoop
+
+
+def battery_watchdog(speaker: Speaker):
+    """Periodic check; TARS announces when the battery runs low."""
+    from .skills.system import read_battery, battery_percent
+    state = {"warned": False}
+
+    def check():
+        battery = read_battery()
+        if battery is None:
+            return
+        pct = battery_percent(battery["voltage"])
+        if pct <= settings.battery_low_pct and not state["warned"]:
+            state["warned"] = True
+            speaker.say(f"Battery at {pct} percent. I suggest a recharge before I power down dramatically.")
+        elif pct > settings.battery_low_pct + 10:
+            state["warned"] = False
+    return check
 
 
 def main():
@@ -35,9 +57,18 @@ def main():
     gaits = Gaits(driver, settings)
     gaits.neutral()
 
-    memory = Memory()
-    brain = Brain(settings, memory, gaits)
-    voice = VoiceLoop(settings, brain)
+    scheduler = Scheduler()
+    scheduler.start()
+    speaker = Speaker(settings)
+    memory = Memory(settings)
+
+    ctx = skills.SkillContext(settings=settings, memory=memory, gaits=gaits,
+                              scheduler=scheduler, speaker=speaker)
+    skills.load_skills()
+    brain = Brain(settings, memory, ctx)
+    voice = VoiceLoop(settings, brain, speaker)
+
+    scheduler.every(60, battery_watchdog(speaker))
 
     if not args.no_gamepad:
         threading.Thread(target=gamepad.run,
@@ -45,8 +76,9 @@ def main():
     if not args.no_voice:
         voice.start()
 
-    log.info("%s online. Humor %d%%, honesty %d%%.",
-             settings.robot_name, settings.humor, settings.honesty)
+    log.info("%s online. Humor %d%%, honesty %d%%, %d skills.",
+             settings.robot_name, settings.humor, settings.honesty,
+             len(skills.REGISTRY))
 
     if args.no_web:
         threading.Event().wait()  # keep daemon threads alive
