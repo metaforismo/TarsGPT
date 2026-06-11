@@ -14,10 +14,12 @@ ENERGY_FLOOR = 350        # minimum RMS threshold even in a silent room
 AMBIENT_BLOCKS = 3        # first 0.3s measure background noise, not speech
 
 
-def record_until_silence() -> str | None:
+def record_until_silence(wait_seconds: float | None = None) -> str | None:
     """Record from the default microphone until the speaker stops. Returns a
-    wav path. The speech threshold auto-calibrates on the ambient noise heard
-    in the first instants, so it works in noisy rooms too."""
+    wav path, or None if nobody spoke. The speech threshold auto-calibrates
+    on the ambient noise heard in the first instants, so it works in noisy
+    rooms too. wait_seconds bounds how long to wait for speech to *start*
+    (used by the follow-up conversation window)."""
     try:
         import numpy as np
         import sounddevice as sd
@@ -28,6 +30,7 @@ def record_until_silence() -> str | None:
     block = int(SAMPLE_RATE * 0.1)
     frames, silent_blocks, spoke = [], 0, False
     ambient, threshold = [], ENERGY_FLOOR
+    wait_blocks = int((wait_seconds or MAX_SECONDS) / 0.1) + AMBIENT_BLOCKS
     with sd.InputStream(samplerate=SAMPLE_RATE, channels=1, dtype="int16",
                         blocksize=block) as stream:
         for i in range(int(MAX_SECONDS / 0.1)):
@@ -45,6 +48,8 @@ def record_until_silence() -> str | None:
                 silent_blocks += 1
                 if silent_blocks * 0.1 >= SILENCE_SECONDS:
                     break
+            elif i >= wait_blocks:
+                break  # nobody started talking within the wait window
     if not spoke:
         return None
 

@@ -31,6 +31,9 @@ class Settings:
     piper_voice: str = os.environ.get("TARS_PIPER_VOICE", "")   # path to a piper .onnx voice
     wake_word: str = os.environ.get("TARS_WAKE_WORD", "tars")
     language: str = os.environ.get("TARS_LANGUAGE", "en")       # en | it | ...
+    # after TARS answers, keep listening this many seconds for a follow-up
+    # question without requiring the wake word again (0 disables)
+    followup_window: float = float(os.environ.get("TARS_FOLLOWUP_WINDOW", "6"))
     # --- Personality (adjustable at runtime, persisted) ---
     humor: int = 75
     honesty: int = 90

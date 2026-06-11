@@ -33,7 +33,7 @@ class Speaker:
     def speak_stream(self, chunks) -> str:
         """Consume an iterator of text chunks, speaking sentence by sentence.
         Returns the full assembled text."""
-        buffer, spoken_upto, full = "", 0, []
+        buffer, full = "", []
         for chunk in chunks:
             full.append(chunk)
             buffer += chunk

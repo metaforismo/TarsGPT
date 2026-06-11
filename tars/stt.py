@@ -27,7 +27,7 @@ def _vosk(wav_path: str, s: Settings) -> str:
     import json
     import wave
     try:
-        from vosk import Model, KaldiRecognizer
+        from vosk import KaldiRecognizer
     except ImportError:
         log.warning("vosk not installed and no OpenAI key - cannot transcribe")
         return ""

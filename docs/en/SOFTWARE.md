@@ -10,6 +10,9 @@
 | **Local or cloud LLM** | OpenAI cloud, or any OpenAI-compatible server — Ollama, LM Studio, llama.cpp, vLLM — via `TARS_LLM_BASE_URL`. A fully offline TARS is possible | `tars/llm.py` |
 | **Character cards** | Switchable personas in `characters/*.json` (TARS, CASE, KIPP included): name, persona text, default dials. "Become CASE" works by voice, dashboard or API | `tars/characters.py` |
 | **Choreographed sequences** | Named movement routines (greet, wiggle, patrol + your own in `data/sequences.json`); "TARS, do a little dance" → `perform` skill | `tars/movement/sequences.py` |
+| **Gait learning** | Verifiable-reward optimization of the walking parameters: the robot walks, you measure the centimeters, the optimizer learns. `python -m tars.learn` | `tars/learn/` |
+| **Continuous conversation** | After answering, TARS keeps listening for ~6 s so you can reply without repeating the wake word (`TARS_FOLLOWUP_WINDOW`) | `tars/voice.py` |
+| **Onboard display** | `/display`: movie-style readout (name, humor/honesty bars, power, core temp, clock) for the robot's DSI screen in kiosk mode | `tars/web/static/display.html` |
 | **Piper TTS** | Free, local neural text-to-speech: install `piper`, download a voice, set `TARS_PIPER_VOICE` — sits in the fallback chain before espeak | `tars/tts.py` |
 | **Volume control** | `set_volume` skill via amixer/pactl | `tars/skills/system.py` |
 | **Image generation** | `generate_image` skill (DALL·E 3): saved under `data/images/`, previewed inline in the dashboard chat | `tars/skills/images.py` |
@@ -114,6 +117,43 @@ TARS_STT=vosk
 ```
 
 If the local server doesn't support tool calling, TARS detects it at runtime and degrades to plain conversation instead of failing (skills are temporarily disabled).
+
+## Teaching TARS to walk better (verifiable reward)
+
+The walking gait depends on five timing parameters (torso lift speed, leg
+rotation speed, the pivot "bump", the recovery, the return). The factory
+values are a compromise; your build — its weight, servos, floor — has its own
+optimum. `tars/learn` finds it with a **(1+1) evolution strategy** whose
+reward is *physically verifiable*: centimeters actually walked.
+
+```bash
+python -m tars.learn --reward measured --iterations 12 --steps 3
+```
+
+For each candidate gait the robot walks 3 steps; you read the distance off a
+tape measure (or floor tiles) and type it in — negative if it fell. The
+optimizer mutates the parameters in log-space with an adaptive step size
+(1/5th-success rule: explore wider while improving, narrow when stalling) and
+saves the best gait to `data/gait_params.json`, loaded automatically at every
+start. Budget ~10 minutes and ~2 m of free floor for a session; you can stop
+and resume — training always starts from the current best.
+
+`--reward sim` runs the same machinery against a deterministic surrogate
+landscape (used by the test suite to verify the optimizer actually converges)
+— useful to dry-run the whole loop off-robot with `--sim`.
+
+## The onboard screen
+
+Point the robot's own browser at the readout for the full movie effect:
+
+```bash
+chromium-browser --kiosk --noerrdialogs http://localhost:8000/display
+```
+
+Black background, cyan monospace, humor/honesty bars, power and core temp,
+CRT scanlines, blinking cursor. The name pulses while TARS is listening.
+Localhost is exempt from the dashboard password, so the kiosk works even
+with `TARS_WEB_PASSWORD` set.
 
 ## Writing a skill (the whole point)
 

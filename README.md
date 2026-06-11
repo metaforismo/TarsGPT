@@ -14,6 +14,9 @@ TarsGPT is a **complete, self-contained robot project**: an original Python runt
 - 🖥️ **Local or cloud LLM** — OpenAI, or fully local via Ollama/LM Studio (`TARS_LLM_BASE_URL`); free local neural voice with Piper TTS
 - 🎭 **Character cards** — switch between TARS, CASE and KIPP (or your own) by voice or dashboard
 - 🕺 **Choreographed sequences** — greet, wiggle, patrol or your own routines ("TARS, do a little dance")
+- 🧬 **Gait learning** — verifiable-reward optimization: the robot walks, you measure, it learns your floor (`python -m tars.learn`)
+- 💬 **Continuous conversation** — after answering, TARS keeps listening so you can reply without the wake word
+- 📟 **Onboard display** — movie-style `/display` readout for the robot's DSI screen (kiosk mode)
 - 🕸️ **Knowledge graph** — structured facts ("Francesco owns a P1S") learned, deduplicated, persisted and injected when relevant
 - 🪪 **Speaker identification** *(experimental)* — enroll your voice and TARS knows who's talking
 - 📱 **Browser voice mode** — talk to TARS from any phone/PC on the network, replies stream back as audio
@@ -62,6 +65,7 @@ tars/                # the robot runtime (original implementation)
   app.py             # entrypoint: python -m tars.app
   llm.py             # streaming LLM brain with skill tool-calling
   skills/            # plugin skills: move, recall, look, timers, music, HA…
+  learn/             # gait optimizer (verifiable-reward evolution strategy)
   speech.py          # sentence-streaming TTS pipeline
   scheduler.py       # heartbeat scheduler (timers, battery watchdog)
   memory.py          # semantic long-term memory (embeddings + offline fallback)
@@ -94,6 +98,9 @@ TarsGPT è un **progetto robot completo e autonomo**: un runtime Python original
 - 🖥️ **LLM locale o cloud** — OpenAI, oppure tutto in locale via Ollama/LM Studio (`TARS_LLM_BASE_URL`); voce neurale locale gratuita con Piper TTS
 - 🎭 **Character card** — passa da TARS a CASE a KIPP (o ai tuoi) a voce o da dashboard
 - 🕺 **Sequenze coreografate** — greet, wiggle, patrol o le tue routine ("TARS, balla")
+- 🧬 **Apprendimento dell'andatura** — ottimizzazione con reward verificabile: il robot cammina, tu misuri, lui impara il tuo pavimento (`python -m tars.learn`)
+- 💬 **Conversazione continua** — dopo la risposta TARS resta in ascolto: replichi senza ripetere la wake word
+- 📟 **Schermo di bordo** — readout `/display` in stile film per il display DSI del robot (modalità kiosk)
 - 🕸️ **Knowledge graph** — fatti strutturati ("Francesco possiede una P1S") appresi, deduplicati, persistenti e iniettati quando rilevanti
 - 🪪 **Identificazione speaker** *(sperimentale)* — registra la tua voce e TARS sa chi sta parlando
 - 📱 **Voce dal browser** — parla con TARS da qualsiasi telefono/PC in rete, le risposte tornano come audio

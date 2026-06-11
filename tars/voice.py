@@ -81,16 +81,28 @@ class VoiceLoop:
         return False
 
     def _interact(self):
+        """One wake-word interaction, then keep the conversation open: for
+        followup_window seconds the user can reply without saying the wake
+        word again (like talking to the movie TARS)."""
         self.state = "listening"
         wav = audio.record_until_silence()
-        if not wav:
-            self.state = "waiting" if self.running else "off"
-            return
+        while wav:
+            understood = self._exchange(wav)
+            if (not understood or self.s.followup_window <= 0
+                    or not self.running):
+                break
+            self.state = "listening"
+            wav = audio.record_until_silence(wait_seconds=self.s.followup_window)
+        self.state = "waiting" if self.running else "off"
+
+    def _exchange(self, wav: str) -> bool:
+        """Transcribe one utterance, answer it, speak the reply.
+        Returns True if speech was understood."""
         try:
             self.state = "thinking"
             text = stt.transcribe(wav, self.s)
             if not text:
-                return
+                return False
             who = self.speaker_id.identify(wav) if self.speaker_id else None
             log.info("Heard%s: %s", f" ({who})" if who else "", text)
             self.state = "speaking"
@@ -98,6 +110,6 @@ class VoiceLoop:
                 self.brain.chat_stream(text, speaker=who))
             self.speaker.wait()
             log.info("Replied: %s", reply)
+            return True
         finally:
             os.unlink(wav)
-            self.state = "waiting" if self.running else "off"

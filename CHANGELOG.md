@@ -2,6 +2,21 @@
 
 All notable changes to TarsGPT. Dates are merge dates.
 
+## 1.1.0 — 2026-06
+
+- **Gait learning** (`tars/learn/`): (1+1) evolution strategy over the five
+  walking-timing parameters with a physically verifiable reward (measured
+  centimeters per step); log-space mutations, 1/5th-success adaptive step,
+  results persisted to `data/gait_params.json` and loaded at startup.
+  `python -m tars.learn --reward measured` (or `--reward sim` dry-run)
+- **Continuous conversation**: after answering, TARS keeps listening for
+  `TARS_FOLLOWUP_WINDOW` seconds (default 6) so follow-ups need no wake word
+- **Onboard display** (`/display`): movie-style kiosk readout for the DSI
+  screen — humor/honesty bars, power, core temp, CRT scanlines; localhost is
+  exempt from the dashboard password so the kiosk always works
+- Gait timing refactored into tunable parameters (`DEFAULT_GAIT_PARAMS`)
+- Lint-clean codebase (ruff); suite grown to 29 tests
+
 ## 1.0.0 — 2026-06
 
 The complete overhaul: from a README plus three scripts to a full, tested robot project.

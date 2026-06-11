@@ -41,7 +41,10 @@ def create_app(s: Settings, brain: Brain, gaits, voice: VoiceLoop) -> Flask:
         """Optional shared-password login (set TARS_WEB_PASSWORD)."""
         if not s.web_password:
             return None
-        if request.path in ("/", "/api/login") or request.path.startswith("/images/"):
+        if request.remote_addr == "127.0.0.1":
+            return None  # the robot's own kiosk screen never needs login
+        if request.path in ("/", "/display", "/api/login") \
+                or request.path.startswith("/images/"):
             return None
         token = request.cookies.get("tars_session", "")
         if token in sessions:
@@ -63,6 +66,12 @@ def create_app(s: Settings, brain: Brain, gaits, voice: VoiceLoop) -> Flask:
     @app.get("/")
     def index():
         return send_from_directory(STATIC, "index.html")
+
+    @app.get("/display")
+    def display():
+        """Movie-style onboard readout for the robot's own DSI screen
+        (open in a kiosk browser: chromium --kiosk http://localhost:8000/display)."""
+        return send_from_directory(STATIC, "display.html")
 
     @app.get("/images/<path:fname>")
     def images(fname):

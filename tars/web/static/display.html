@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TARS // ONBOARD</title>
+<style>
+  body { margin:0; height:100vh; background:#000; color:#7fdfff; overflow:hidden;
+         font:16px/1.7 "Courier New", monospace; display:flex; flex-direction:column;
+         justify-content:center; padding:5vw; box-sizing:border-box; cursor:none; }
+  /* faint CRT scanlines */
+  body::after { content:""; position:fixed; inset:0; pointer-events:none;
+    background:repeating-linear-gradient(0deg, transparent 0 2px, rgba(0,0,0,.25) 2px 4px); }
+  #name { font-size:11vw; letter-spacing:1.2vw; margin:0; color:#bfeeff;
+          text-shadow:0 0 18px rgba(127,223,255,.6); }
+  .row { display:flex; justify-content:space-between; max-width:34em;
+         border-bottom:1px solid #103a4a; padding:3px 0; }
+  .bar { display:inline-block; width:12em; height:.7em; background:#06222e;
+         vertical-align:middle; }
+  .bar i { display:block; height:100%; background:#7fdfff; }
+  #cursor { display:inline-block; width:.6em; height:1em; background:#7fdfff;
+            animation:blink 1s steps(1) infinite; vertical-align:text-bottom; }
+  @keyframes blink { 50% { opacity:0; } }
+  #clock { color:#3e7d93; }
+  .listening { animation:pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 50% { text-shadow:0 0 34px rgba(127,223,255,1); } }
+</style>
+</head>
+<body>
+  <h1 id="name">TARS</h1>
+  <div class="row"><span>VOICE</span><span id="voice">—</span></div>
+  <div class="row"><span>HUMOR</span><span><span class="bar"><i id="humor"></i></span> <span id="humorPct"></span></span></div>
+  <div class="row"><span>HONESTY</span><span><span class="bar"><i id="honesty"></i></span> <span id="honestyPct"></span></span></div>
+  <div class="row"><span>POWER</span><span id="power">—</span></div>
+  <div class="row"><span>CORE TEMP</span><span id="temp">—</span></div>
+  <div class="row"><span>TIME</span><span id="clock">—</span></div>
+  <p>&gt; standing by <span id="cursor"></span></p>
+
+<script>
+async function tick() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+  try {
+    const r = await fetch('/api/status');
+    if (!r.ok) { document.getElementById('voice').textContent = r.status === 401 ? 'LOCKED' : 'ERR'; return; }
+    const st = await r.json();
+    document.getElementById('name').textContent = st.name;
+    document.getElementById('name').className = st.voice === 'listening' ? 'listening' : '';
+    document.getElementById('voice').textContent = (st.voice || 'off').toUpperCase();
+    for (const k of ['humor', 'honesty']) {
+      document.getElementById(k).style.width = st[k] + '%';
+      document.getElementById(k + 'Pct').textContent = st[k] + '%';
+    }
+    document.getElementById('power').textContent =
+      st.battery_pct == null ? 'EXTERNAL' : st.battery_pct + '%';
+    document.getElementById('temp').textContent =
+      st.cpu_temp == null ? '—' : st.cpu_temp + '°C';
+  } catch { document.getElementById('voice').textContent = 'OFFLINE'; }
+}
+tick(); setInterval(tick, 2000);
+</script>
+</body>
+</html>

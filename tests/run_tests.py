@@ -245,11 +245,16 @@ def test_web_auth():
         spk.muted = True
         app = create_app(settings, brain, ctx.gaits, VoiceLoop(settings, brain, spk))
         c = app.test_client()
-        assert c.get("/").status_code == 200                       # page loads
-        assert c.get("/api/status").status_code == 401             # API locked
-        assert c.post("/api/login", json={"password": "nope"}).status_code == 403
-        assert c.post("/api/login", json={"password": "secret"}).status_code == 200
-        assert c.get("/api/status").status_code == 200             # cookie accepted
+        remote = {"REMOTE_ADDR": "203.0.113.9"}   # simulate a LAN client
+        assert c.get("/", environ_overrides=remote).status_code == 200
+        assert c.get("/api/status", environ_overrides=remote).status_code == 401
+        assert c.post("/api/login", json={"password": "nope"},
+                      environ_overrides=remote).status_code == 403
+        assert c.post("/api/login", json={"password": "secret"},
+                      environ_overrides=remote).status_code == 200
+        assert c.get("/api/status", environ_overrides=remote).status_code == 200
+        # the robot's own kiosk screen (localhost) is always exempt
+        assert c.get("/api/status").status_code == 200
     finally:
         settings.web_password = ""
 
@@ -310,6 +315,72 @@ def test_character_boot_restore_keeps_dials():
     characters.apply_character("case", settings, dials=False)  # boot restore
     assert settings.robot_name == "CASE" and settings.humor == 99
     characters.apply_character("tars", settings)          # restore default
+
+
+def test_gait_optimizer_converges():
+    """With a deterministic (verifiable) reward the optimizer must improve on
+    the starting gait and respect the search-space bounds."""
+    from tars.learn import GaitOptimizer, SimReward, SEARCH_SPACE
+    reward = SimReward(noise=0.0)                 # deterministic landscape
+    worst = {spec.name: spec.lo for spec in SEARCH_SPACE}  # far corner
+    baseline = reward(worst)
+    result = GaitOptimizer(reward, seed=7).optimize(
+        start=dict(worst), iterations=80)
+    assert result.best_reward > baseline + 1.0, \
+        f"no improvement: {baseline:.2f} -> {result.best_reward:.2f}"
+    assert result.best_reward > 8.0               # close to the optimum (10)
+    for spec in SEARCH_SPACE:
+        assert spec.lo <= result.best_params[spec.name] <= spec.hi
+    assert len(result.history) == 81              # baseline + 80 candidates
+    # determinism: same seed, same outcome
+    again = GaitOptimizer(SimReward(noise=0.0), seed=7).optimize(
+        start=dict(worst), iterations=80)
+    assert again.best_reward == result.best_reward
+
+
+def test_measured_reward_flow():
+    """MeasuredReward must drive the robot and parse the operator's input."""
+    from tars.learn import MeasuredReward
+    gaits = Gaits(ServoDriver(60, sim=True), settings)
+    answers = iter(["", "not-a-number", "12,5"])  # Enter, junk, then valid
+    printed = []
+    reward = MeasuredReward(gaits, steps=2, input_fn=lambda _: next(answers),
+                            print_fn=printed.append)
+    value = reward(dict(gaits.gp))
+    assert value == 12.5 / 2
+    assert any("step 2/2" in str(line) for line in printed)
+
+
+def test_gait_params_persistence():
+    from tars.movement.gaits import GAIT_PARAMS_FILE, DEFAULT_GAIT_PARAMS
+    gaits = Gaits(ServoDriver(60, sim=True), settings)
+    gaits.apply_gait_params({"lift_delay": 0.002, "not_a_param": 99})
+    assert gaits.gp["lift_delay"] == 0.002
+    assert "not_a_param" not in gaits.gp
+    gaits.save_gait_params()
+    reloaded = Gaits(ServoDriver(60, sim=True), settings)
+    assert reloaded.gp["lift_delay"] == 0.002
+    GAIT_PARAMS_FILE.write_text("{broken json")   # corrupt file is ignored
+    survivor = Gaits(ServoDriver(60, sim=True), settings)
+    assert survivor.gp["lift_delay"] == DEFAULT_GAIT_PARAMS["lift_delay"]
+    GAIT_PARAMS_FILE.unlink()
+
+
+def test_display_route():
+    ctx = make_ctx()
+    brain = Brain(settings, ctx.memory, ctx)
+    spk = Speaker(settings)
+    spk.muted = True
+    app = create_app(settings, brain, ctx.gaits, VoiceLoop(settings, brain, spk))
+    c = app.test_client()
+    page = c.get("/display")
+    assert page.status_code == 200 and b"ONBOARD" in page.data
+    # kiosk page stays reachable even with the password gate on
+    settings.web_password = "x"
+    try:
+        assert c.get("/display").status_code == 200
+    finally:
+        settings.web_password = ""
 
 
 def test_brain_offline():
