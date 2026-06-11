@@ -191,7 +191,9 @@ def create_app(s: Settings, brain: Brain, gaits, voice: VoiceLoop) -> Flask:
         if path is None:
             return jsonify(error="no TTS engine available"), 503
         mime = "audio/wav" if path.endswith(".wav") else "audio/mpeg"
-        return send_file(path, mimetype=mime)
+        resp = send_file(path, mimetype=mime)
+        resp.call_on_close(lambda: os.path.exists(path) and os.unlink(path))
+        return resp
 
     @app.post("/api/voice/<cmd>")
     def voice_cmd(cmd):

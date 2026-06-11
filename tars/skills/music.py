@@ -18,6 +18,11 @@ def _stop():
     proc = _player["proc"]
     if proc and proc.poll() is None:
         proc.terminate()
+        try:
+            proc.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
     _player["proc"] = None
     _player["what"] = None
 

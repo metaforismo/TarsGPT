@@ -16,6 +16,7 @@ The handler receives a SkillContext (settings, memory, gaits, scheduler,
 speaker) and returns a string for the LLM. Raise nothing: return error text.
 """
 import importlib
+import inspect
 import logging
 import pkgutil
 from dataclasses import dataclass, field
@@ -84,9 +85,13 @@ def run(name: str, args: dict, ctx: SkillContext) -> str:
     if s is None:
         return f"error: unknown skill {name}"
     try:
-        return str(s.handler(ctx, **args))
+        # validate the call shape up front, so a TypeError raised *inside*
+        # the handler is reported as a crash, not as bad arguments
+        inspect.signature(s.handler).bind(ctx, **args)
     except TypeError as e:
         return f"error: bad arguments for {name}: {e}"
+    try:
+        return str(s.handler(ctx, **args))
     except Exception as e:
         log.exception("skill %s crashed", name)
         return f"error: {name} failed: {e}"

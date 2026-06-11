@@ -81,6 +81,40 @@ Dashboard: `http://<indirizzo-pi>:8000`
 4. Parti con `--no-voice` e verifica i movimenti dalla dashboard.
 5. Aggiungi le chiavi API, attiva la voce, dì "TARS".
 
+## Scegliere il tuo stack IA
+
+| Stack | Cervello | Voce | STT | Qualità | Costo ricorrente | Richiede |
+|---|---|---|---|---|---|---|
+| **Cloud** (default) | OpenAI `gpt-4o-mini` | ElevenLabs | Whisper API | Migliore, voce da film | ~2–10 €/mese | Chiavi API |
+| **Ibrido** ⭐ | OpenAI `gpt-4o-mini` | **Piper** (locale) | Whisper API | Ottima, voce gratis | ~1–5 €/mese | Chiave OpenAI |
+| **Tutto locale** | Ollama via `TARS_LLM_BASE_URL` | Piper | Vosk | Buona, privata, offline | **0 €** | Un PC in rete (o un Pi paziente) |
+
+### Voce Piper in due minuti
+
+```bash
+pip install piper-tts                       # fornisce il comando `piper`
+# scarica una voce da https://github.com/rhasspy/piper/blob/master/VOICES.md
+# es. it_IT-riccardo-x_low (italiano) o en_US-ryan-low (inglese)
+mkdir -p ~/voices && cd ~/voices
+wget https://huggingface.co/rhasspy/piper-voices/resolve/main/it/it_IT/riccardo/x_low/it_IT-riccardo-x_low.onnx{,.json}
+echo "TARS_PIPER_VOICE=$HOME/voices/it_IT-riccardo-x_low.onnx" >> .env
+```
+
+Piper si inserisce da solo nella catena di fallback (prima di espeak): i motori cloud vengono usati quando configurati, Piper copre tutto il resto.
+
+### Tutto locale con Ollama
+
+```bash
+# su qualsiasi PC della tua rete (o sul Pi stesso con un modello piccolo)
+ollama serve && ollama pull llama3.1:8b
+# nel .env di TARS:
+TARS_LLM_BASE_URL=http://<indirizzo-pc>:11434/v1
+TARS_MODEL=llama3.1:8b
+TARS_STT=vosk
+```
+
+Se il server locale non supporta il tool calling, TARS lo rileva a runtime e degrada a conversazione semplice invece di fallire (le skill vengono temporaneamente disabilitate).
+
 ## Scrivere una skill (il bello del sistema)
 
 Crea `tars/skills/meteo.py`:

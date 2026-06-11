@@ -31,16 +31,20 @@ def load_card(name: str) -> dict | None:
         return None
 
 
-def apply_character(name: str, s: Settings) -> bool:
+def apply_character(name: str, s: Settings, dials: bool = True) -> bool:
+    """Apply a card. With dials=False only the identity (name, persona, voice)
+    is applied - used at boot to restore the persisted character without
+    clobbering personality values the user tuned afterwards."""
     card = load_card(name)
     if card is None:
         return False
     s.character = name.lower()
     s.robot_name = card.get("name", name.upper())
     s.persona_extra = card.get("persona", "")
-    for dial in ("humor", "honesty", "sarcasm"):
-        if dial in card:
-            setattr(s, dial, max(0, min(100, int(card[dial]))))
+    if dials:
+        for dial in ("humor", "honesty", "sarcasm"):
+            if dial in card:
+                setattr(s, dial, max(0, min(100, int(card[dial]))))
     if card.get("elevenlabs_voice_id"):
         s.elevenlabs_voice_id = card["elevenlabs_voice_id"]
     s.save()

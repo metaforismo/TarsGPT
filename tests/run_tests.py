@@ -254,6 +254,64 @@ def test_web_auth():
         settings.web_password = ""
 
 
+def test_sweep_pair_asymmetric():
+    """Both channels must land exactly on their own end value even when the
+    two ranges have different lengths (asymmetric calibration)."""
+    gaits = Gaits(ServoDriver(60, sim=True), settings)
+    seen = {}
+    gaits.d.set_pwm = lambda ch, v: seen.__setitem__(ch, v)
+    gaits._sweep_pair(1, 100, 200, 2, 500, 530, 0)   # 100 steps vs 30 steps
+    assert seen[1] == 200 and seen[2] == 530, seen
+    gaits._sweep_pair(1, 200, 100, 2, 530, 500, 0)   # reverse direction
+    assert seen[1] == 100 and seen[2] == 500, seen
+    gaits._sweep_pair(1, 50, 50, 2, 60, 60, 0)       # zero-length: no crash
+
+
+def test_nudge_arm_clamped():
+    gaits = Gaits(ServoDriver(60, sim=True), settings)
+    for _ in range(200):
+        gaits.nudge_arm("star_main", 1)              # try to overdrive it
+    assert gaits.arm["star_main"] == Gaits.SAFE_MAX
+    for _ in range(400):
+        gaits.nudge_arm("star_main", -1)
+    assert gaits.arm["star_main"] == Gaits.SAFE_MIN
+
+
+def test_skill_arg_validation_vs_crash():
+    ctx = make_ctx()
+    # wrong call shape -> bad arguments
+    assert "bad arguments" in skills.run("move", {"bogus": 1}, ctx)
+    # a TypeError raised INSIDE a handler must be reported as a crash
+    @skills.skill("_crashy", "test-only")
+    def _crashy(c):
+        raise TypeError("internal bug")
+    try:
+        result = skills.run("_crashy", {}, ctx)
+        assert "failed" in result and "bad arguments" not in result, result
+    finally:
+        skills.REGISTRY.pop("_crashy", None)
+
+
+def test_knowledge_whole_word_match():
+    kg = KnowledgeGraph()
+    kg.add("Chrome", "is", "a web browser")
+    try:
+        assert kg.about("rome") == []                 # no substring bleed
+        assert len(kg.about("chrome")) == 1
+    finally:
+        kg.forget("Chrome")
+
+
+def test_character_boot_restore_keeps_dials():
+    from tars import characters
+    ctx = make_ctx()
+    skills.run("set_character", {"name": "case"}, ctx)   # sets humor to 25
+    settings.humor = 99                                   # user tunes it later
+    characters.apply_character("case", settings, dials=False)  # boot restore
+    assert settings.robot_name == "CASE" and settings.humor == 99
+    characters.apply_character("tars", settings)          # restore default
+
+
 def test_brain_offline():
     ctx = make_ctx()
     brain = Brain(settings, ctx.memory, ctx)

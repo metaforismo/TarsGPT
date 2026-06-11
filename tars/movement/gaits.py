@@ -32,16 +32,15 @@ class Gaits:
         self.d.set_pwm(channel, end)
 
     def _sweep_pair(self, ch_a, start_a, end_a, ch_b, start_b, end_b, delay):
-        """Sweep two channels in lockstep (drive servos move mirrored)."""
-        steps = abs(end_a - start_a)
-        dir_a = 1 if end_a > start_a else -1
-        dir_b = 1 if end_b > start_b else -1
-        a, b = start_a, start_b
-        for _ in range(steps):
-            a += dir_a
-            b += dir_b
-            self.d.set_pwm(ch_a, a)
-            self.d.set_pwm(ch_b, b)
+        """Sweep two channels in lockstep. Ranges may be asymmetric: both
+        channels are interpolated proportionally and land exactly on their
+        own end value."""
+        steps = max(abs(end_a - start_a), abs(end_b - start_b))
+        if steps == 0:
+            return
+        for i in range(1, steps + 1):
+            self.d.set_pwm(ch_a, start_a + round((end_a - start_a) * i / steps))
+            self.d.set_pwm(ch_b, start_b + round((end_b - start_b) * i / steps))
             time.sleep(delay)
 
     # ---------- torso ----------
@@ -142,10 +141,17 @@ class Gaits:
 
     # ---------- arms ----------
 
+    # absolute PWM bounds a servo may ever be driven to (matches servo_tester)
+    SAFE_MIN, SAFE_MAX = 130, 680
+
     def nudge_arm(self, joint: str, direction: int, amount: int = 10):
         """joint: port_main|star_main|port_forearm|star_forearm|port_hand|star_hand.
-        direction: +1 / -1. Port joints are mirrored, so +1 decreases their PWM."""
+        direction: +1 / -1. Port joints are mirrored, so +1 decreases their PWM.
+        Clamped to SAFE_MIN..SAFE_MAX so repeated nudges cannot force a servo
+        past its mechanical stop."""
         sign = -1 if joint.startswith("port") else 1
-        self.arm[joint] += sign * direction * amount
+        self.arm[joint] = max(self.SAFE_MIN,
+                              min(self.SAFE_MAX,
+                                  self.arm[joint] + sign * direction * amount))
         ch = getattr(self.s, f"ch_{joint}")
         self.d.set_pwm(ch, self.arm[joint])

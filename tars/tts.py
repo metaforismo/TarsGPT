@@ -8,6 +8,7 @@ synthesize() returns an audio file (also served to the browser by the web
 dashboard); speak() synthesizes and plays it on the robot's speaker.
 """
 import logging
+import os
 import subprocess
 import shutil
 import tempfile
@@ -48,10 +49,16 @@ def synthesize(text: str, s: Settings) -> str | None:
 
 def speak(text: str, s: Settings):
     path = synthesize(text, s)
-    if path:
-        audio.play(path)
-    else:
+    if not path:
         log.warning("no TTS engine available; cannot speak: %r", text[:60])
+        return
+    try:
+        audio.play(path)
+    finally:
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
 
 
 def _elevenlabs(text: str, s: Settings) -> str:

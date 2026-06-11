@@ -55,6 +55,12 @@ def main():
                         format="%(asctime)s %(name)s %(levelname)s %(message)s")
     log = logging.getLogger("tars")
 
+    # restore the persisted character's identity/voice without overriding
+    # personality dials the user may have tuned since switching
+    from . import characters
+    if settings.character:
+        characters.apply_character(settings.character, settings, dials=False)
+
     driver = ServoDriver(settings.pwm_frequency, sim=args.sim or settings.sim_mode)
     gaits = Gaits(driver, settings)
     gaits.neutral()

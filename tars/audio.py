@@ -10,11 +10,14 @@ log = logging.getLogger("tars.audio")
 SAMPLE_RATE = 16000
 SILENCE_SECONDS = 1.2     # stop recording after this much trailing silence
 MAX_SECONDS = 15
-ENERGY_THRESHOLD = 350    # RMS; raise in noisy rooms
+ENERGY_FLOOR = 350        # minimum RMS threshold even in a silent room
+AMBIENT_BLOCKS = 3        # first 0.3s measure background noise, not speech
 
 
 def record_until_silence() -> str | None:
-    """Record from the default microphone until the speaker stops. Returns a wav path."""
+    """Record from the default microphone until the speaker stops. Returns a
+    wav path. The speech threshold auto-calibrates on the ambient noise heard
+    in the first instants, so it works in noisy rooms too."""
     try:
         import numpy as np
         import sounddevice as sd
@@ -24,13 +27,19 @@ def record_until_silence() -> str | None:
 
     block = int(SAMPLE_RATE * 0.1)
     frames, silent_blocks, spoke = [], 0, False
+    ambient, threshold = [], ENERGY_FLOOR
     with sd.InputStream(samplerate=SAMPLE_RATE, channels=1, dtype="int16",
                         blocksize=block) as stream:
-        for _ in range(int(MAX_SECONDS / 0.1)):
+        for i in range(int(MAX_SECONDS / 0.1)):
             data, _ = stream.read(block)
             frames.append(bytes(data))
             rms = float(np.sqrt(np.mean(data.astype(np.float64) ** 2)))
-            if rms > ENERGY_THRESHOLD:
+            if i < AMBIENT_BLOCKS:
+                ambient.append(rms)
+                continue
+            if i == AMBIENT_BLOCKS:
+                threshold = max(ENERGY_FLOOR, 2.5 * sum(ambient) / len(ambient))
+            if rms > threshold:
                 spoke, silent_blocks = True, 0
             elif spoke:
                 silent_blocks += 1

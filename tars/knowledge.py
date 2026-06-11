@@ -58,11 +58,12 @@ class KnowledgeGraph:
             return before - len(self.triples)
 
     def about(self, entity: str) -> list[dict]:
-        """All facts where the entity appears as subject or object."""
-        e = entity.lower()
+        """All facts where the entity appears as subject or object.
+        Whole-word match, so 'rome' does not match 'chrome'."""
+        pattern = re.compile(rf"\b{re.escape(entity.strip())}\b", re.IGNORECASE)
         with self._lock:
             return [t for t in self.triples
-                    if e in t["s"].lower() or e in t["o"].lower()]
+                    if pattern.search(t["s"]) or pattern.search(t["o"])]
 
     def search(self, text: str, k: int = 6) -> list[dict]:
         """Facts whose words overlap the given text, best matches first."""

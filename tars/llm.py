@@ -24,6 +24,8 @@ class Brain:
         self.memory = memory
         self.ctx = ctx
         self._client = None
+        # some local servers reject the tools parameter; detected at runtime
+        self._tools_supported = True
 
     @property
     def configured(self) -> bool:
@@ -86,12 +88,29 @@ class Brain:
             if reply:
                 self.memory.add_turn("assistant", reply)
 
+    def _create_stream(self, messages: list):
+        kwargs = dict(model=self.s.openai_model, messages=messages,
+                      max_tokens=500, stream=True)
+        if self._tools_supported:
+            kwargs["tools"] = skills.tool_schemas()
+        try:
+            return self.client.chat.completions.create(**kwargs)
+        except Exception as e:
+            # local servers (older Ollama, llama.cpp) may reject `tools`;
+            # degrade to plain chat instead of failing the conversation
+            if self._tools_supported and any(w in str(e).lower()
+                                             for w in ("tool", "function")):
+                log.warning("LLM server rejected tools, continuing without "
+                            "skills: %s", e)
+                self._tools_supported = False
+                kwargs.pop("tools", None)
+                return self.client.chat.completions.create(**kwargs)
+            raise
+
     def _stream_round(self, messages: list, reply_parts: list):
         """One streamed completion. Yields content chunks; returns
         (content, tool_calls) where tool_calls is in API message format."""
-        stream = self.client.chat.completions.create(
-            model=self.s.openai_model, messages=messages,
-            tools=skills.tool_schemas(), max_tokens=500, stream=True)
+        stream = self._create_stream(messages)
 
         content = ""
         calls: dict[int, dict] = {}
