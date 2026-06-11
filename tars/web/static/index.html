@@ -62,6 +62,9 @@
     </div>
     <h2>Knowledge</h2>
     <div id="facts" style="font-size:12px;color:#8b96a3;max-height:140px;overflow-y:auto"></div>
+    <h2>Gait training</h2>
+    <canvas id="spark" width="230" height="48" style="width:100%;background:var(--panel);border:1px solid var(--line);border-radius:8px"></canvas>
+    <div id="trainInfo" style="font-size:12px;color:#8b96a3"></div>
     <h2>Character</h2>
     <select id="character" onchange="setCharacter()" style="width:100%;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px"></select>
     <h2>Personality</h2>
@@ -190,6 +193,32 @@ async function speakInBrowser(text) {
   } catch {}
 }
 
+async function loadTraining() {
+  try {
+    const data = await (await fetch('/api/training')).json();
+    const entries = data.entries || [];
+    const info = document.getElementById('trainInfo');
+    const canvas = document.getElementById('spark');
+    const g = canvas.getContext('2d');
+    g.clearRect(0, 0, canvas.width, canvas.height);
+    if (!entries.length) { info.textContent = 'no sessions yet — python -m tars.learn'; return; }
+    const rewards = entries.map(e => e.reward);
+    const lo = Math.min(...rewards), hi = Math.max(...rewards);
+    const x = i => 4 + i * (canvas.width - 8) / Math.max(1, entries.length - 1);
+    const y = v => hi === lo ? canvas.height / 2
+                             : canvas.height - 6 - (v - lo) * (canvas.height - 12) / (hi - lo);
+    const line = (key, color) => {
+      g.strokeStyle = color; g.lineWidth = 1.5; g.beginPath();
+      entries.forEach((e, i) => i ? g.lineTo(x(i), y(e[key])) : g.moveTo(x(i), y(e[key])));
+      g.stroke();
+    };
+    line('reward', '#3e5566');
+    line('best', getComputedStyle(document.documentElement).getPropertyValue('--acc').trim() || '#62d0ff');
+    const last = entries[entries.length - 1];
+    info.textContent = `best ${last.best} · ${entries.length} evals · ${data.mode} · ${data.started}`;
+  } catch {}
+}
+
 async function loadFacts() {
   try {
     const data = await (await fetch('/api/knowledge')).json();
@@ -255,8 +284,8 @@ async function poll() {
     document.getElementById('status').textContent = line;
   } catch { document.getElementById('status').textContent = 'offline'; }
 }
-loadSettings(); poll(); loadFacts(); loadCharacters();
-setInterval(poll, 3000); setInterval(loadFacts, 10000);
+loadSettings(); poll(); loadFacts(); loadCharacters(); loadTraining();
+setInterval(poll, 3000); setInterval(loadFacts, 10000); setInterval(loadTraining, 10000);
 </script>
 </body>
 </html>

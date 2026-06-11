@@ -10,7 +10,8 @@
 | **LLM locale o cloud** | Cloud OpenAI, oppure qualsiasi server OpenAI-compatibile — Ollama, LM Studio, llama.cpp, vLLM — via `TARS_LLM_BASE_URL`. Un TARS completamente offline è possibile | `tars/llm.py` |
 | **Character card** | Personaggi intercambiabili in `characters/*.json` (inclusi TARS, CASE, KIPP): nome, persona, valori di default. "Diventa CASE" funziona a voce, da dashboard o API | `tars/characters.py` |
 | **Sequenze coreografate** | Routine di movimento con nome (greet, wiggle, patrol + le tue in `data/sequences.json`); "TARS, balla" → skill `perform` | `tars/movement/sequences.py` |
-| **Apprendimento dell'andatura** | Ottimizzazione dei parametri di camminata con reward verificabile: il robot cammina, tu misuri i centimetri, l'ottimizzatore impara. `python -m tars.learn` | `tars/learn/` |
+| **Apprendimento dell'andatura** | Ottimizzazione dei parametri di camminata con reward verificabile: col metro, o a mani libere con la camera; curva di apprendimento live nella dashboard. `python -m tars.learn` | `tars/learn/` |
+| **Rilevamento cadute (IMU)** | MPU-6050 opzionale (~3 €, stesso bus I2C): orientamento in `system_status`, e durante il training una caduta diventa automaticamente una penalità | `tars/sensors.py` |
 | **Conversazione continua** | Dopo la risposta TARS resta in ascolto ~6 s: puoi replicare senza ripetere la wake word (`TARS_FOLLOWUP_WINDOW`) | `tars/voice.py` |
 | **Schermo di bordo** | `/display`: readout in stile film (nome, barre umorismo/onestà, batteria, temperatura, orologio) per il display DSI del robot in modalità kiosk | `tars/web/static/display.html` |
 | **Piper TTS** | Sintesi vocale neurale locale e gratuita: installa `piper`, scarica una voce, imposta `TARS_PIPER_VOICE` — nella catena di fallback prima di espeak | `tars/tts.py` |
@@ -149,8 +150,20 @@ Un frame viene catturato prima e dopo i passi di ogni candidata; la
 correlazione di fase tra i due recupera la traslazione della camera in pixel —
 proporzionale al terreno percorso quando la camera guarda una scena statica
 con texture (puntarla verso il pavimento funziona meglio). I pixel sono
-un'unità relativa, che è tutto ciò che serve all'ottimizzatore. Supervisiona
-le prime sessioni: una caduta produce un frame spazzatura, e il metro
+un'unità relativa, che è tutto ciò che serve all'ottimizzatore. Con
+`--camera-axis x|-x|y|-y` la reward diventa la componente con segno lungo un
+asse dell'immagine: camminare *all'indietro* dà punteggio negativo (trova
+l'asse "avanti" della tua build spingendo TARS una volta e guardando il segno).
+
+**Completamente non supervisionato** — aggiungi l'IMU MPU-6050 (~3 €, in
+parallelo sullo stesso bus I2C, indirizzo 0x68): se presente viene rilevato
+automaticamente e ogni candidata che lascia TARS non in piedi riceve una
+penalità fissa al posto del punteggio camera — cadere non conviene mai
+(`--no-imu` per disattivare). Una singola cattura o misura fallita salta
+quella candidata invece di uccidere la sessione, e ogni valutazione viene
+registrata in `data/gait_training.json`: la dashboard disegna la **curva di
+apprendimento live** (grigio = reward per candidata, accento = miglior
+risultato). Senza IMU supervisiona le prime sessioni; il metro
 (`--reward measured`) resta la verità di riferimento.
 
 `--reward sim` esegue la stessa macchina su una superficie surrogata

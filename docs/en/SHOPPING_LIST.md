@@ -39,7 +39,7 @@
 
 > 💪 **Upgrade option:** the TARS-WIZARD build uses 3× **LewanSoul LD-3015MG** (17 kg·cm) high-torque servos instead of MG996R — stronger and smoother walking, slightly more expensive.
 >
-> 🧭 **Optional sensor:** an **MPU-6050 IMU** (~€3, I2C) detects orientation/falls — useful for supervising gait-training sessions (software roadmap).
+> 🧭 **Optional sensor:** an **MPU-6050 IMU** (~€3, I2C) detects orientation/falls — **supported**: with it installed, gait training penalizes falls automatically (fully unsupervised sessions).
 
 ## 3. Display, audio & vision
 

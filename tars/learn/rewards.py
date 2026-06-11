@@ -36,6 +36,25 @@ class SimReward:
         return 10.0 - err + jitter
 
 
+class FallGuard:
+    """Wrap any reward with an IMU check: if TARS is not upright after the
+    candidate's steps, the reward becomes a fixed penalty - falling must
+    never look profitable, whatever the camera or surrogate said."""
+
+    def __init__(self, inner, imu, penalty: float = -5.0, print_fn=print):
+        self.inner = inner
+        self.imu = imu
+        self.penalty = penalty
+        self.print_fn = print_fn
+
+    def __call__(self, params: dict) -> float:
+        reward = self.inner(params)
+        if self.imu.is_upright() is False:
+            self.print_fn("  IMU: fall detected -> penalty applied")
+            return self.penalty
+        return reward
+
+
 class MeasuredReward:
     """Walk a few steps with the candidate parameters, then record the
     distance actually covered. Reward = centimeters per step; enter a

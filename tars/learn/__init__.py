@@ -6,8 +6,10 @@ surrogate for testing the machinery).
     python -m tars.learn --reward sim --sim    # dry-run of the whole loop
 """
 from .optimizer import GaitOptimizer, SEARCH_SPACE, OptResult
-from .rewards import SimReward, MeasuredReward
+from .rewards import SimReward, MeasuredReward, FallGuard
+from .training_log import TrainingLog
 from .vision_reward import CameraReward, estimate_shift
 
-__all__ = ["GaitOptimizer", "SEARCH_SPACE", "OptResult",
-           "SimReward", "MeasuredReward", "CameraReward", "estimate_shift"]
+__all__ = ["GaitOptimizer", "SEARCH_SPACE", "OptResult", "SimReward",
+           "MeasuredReward", "FallGuard", "TrainingLog", "CameraReward",
+           "estimate_shift"]

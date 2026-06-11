@@ -52,13 +52,21 @@ class CameraReward:
     doubt - it is the ground truth.
     """
 
-    def __init__(self, gaits, steps: int = 3, capture_fn=None, print_fn=print):
+    def __init__(self, gaits, steps: int = 3, capture_fn=None, print_fn=print,
+                 axis: str = "mag"):
+        """axis: 'mag' rewards any translation magnitude; 'x', '-x', 'y' or
+        '-y' reward the signed component along one image axis, so walking
+        backwards scores negative. Find your build's forward axis with one
+        manual push and `estimate_shift` on the two frames."""
         if capture_fn is None:
             from ..skills.vision import capture as capture_fn
+        if axis not in ("mag", "x", "-x", "y", "-y"):
+            raise ValueError(f"invalid axis {axis!r}")
         self.gaits = gaits
         self.steps = steps
         self.capture_fn = capture_fn
         self.print_fn = print_fn
+        self.axis = axis
 
     def __call__(self, params: dict) -> float:
         import math
@@ -82,6 +90,7 @@ class CameraReward:
         finally:
             if isinstance(before, str) and os.path.exists(before):
                 os.unlink(before)
-        distance_px = math.hypot(dx, dy)
-        self.print_fn(f"  camera shift: {distance_px:.1f} px")
+        distance_px = {"mag": math.hypot(dx, dy), "x": dx, "-x": -dx,
+                       "y": dy, "-y": -dy}[self.axis]
+        self.print_fn(f"  camera shift: {distance_px:.1f} px (axis={self.axis})")
         return distance_px / self.steps

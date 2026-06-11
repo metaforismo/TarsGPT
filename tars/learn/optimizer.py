@@ -75,6 +75,11 @@ class GaitOptimizer:
                 # hardware sessions get interrupted; keep the best found so far
                 log.info("interrupted at iteration %d - keeping best so far", i + 1)
                 break
+            except Exception as e:
+                # one failed capture/measurement must not kill the session
+                log.warning("iteration %d evaluation failed (%s) - skipping",
+                            i + 1, e)
+                continue
             history.append((dict(candidate), reward))
             if reward > best_reward:
                 best, best_reward = candidate, reward

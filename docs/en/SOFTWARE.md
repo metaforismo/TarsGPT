@@ -10,7 +10,8 @@
 | **Local or cloud LLM** | OpenAI cloud, or any OpenAI-compatible server — Ollama, LM Studio, llama.cpp, vLLM — via `TARS_LLM_BASE_URL`. A fully offline TARS is possible | `tars/llm.py` |
 | **Character cards** | Switchable personas in `characters/*.json` (TARS, CASE, KIPP included): name, persona text, default dials. "Become CASE" works by voice, dashboard or API | `tars/characters.py` |
 | **Choreographed sequences** | Named movement routines (greet, wiggle, patrol + your own in `data/sequences.json`); "TARS, do a little dance" → `perform` skill | `tars/movement/sequences.py` |
-| **Gait learning** | Verifiable-reward optimization of the walking parameters: the robot walks, you measure the centimeters, the optimizer learns. `python -m tars.learn` | `tars/learn/` |
+| **Gait learning** | Verifiable-reward optimization of the walking parameters: tape measure, or hands-free with the camera; live learning curve in the dashboard. `python -m tars.learn` | `tars/learn/` |
+| **IMU fall detection** | Optional MPU-6050 (~€3, same I2C bus): orientation in `system_status`, and during training a fall automatically becomes a reward penalty | `tars/sensors.py` |
 | **Continuous conversation** | After answering, TARS keeps listening for ~6 s so you can reply without repeating the wake word (`TARS_FOLLOWUP_WINDOW`) | `tars/voice.py` |
 | **Onboard display** | `/display`: movie-style readout (name, humor/honesty bars, power, core temp, clock) for the robot's DSI screen in kiosk mode | `tars/web/static/display.html` |
 | **Piper TTS** | Free, local neural text-to-speech: install `piper`, download a voice, set `TARS_PIPER_VOICE` — sits in the fallback chain before espeak | `tars/tts.py` |
@@ -148,8 +149,20 @@ A frame is grabbed before and after each candidate's steps; phase correlation
 between the two recovers the camera translation in pixels — proportional to
 the ground covered when the camera watches a textured static scene (pointing
 it at the floor works best). Pixels are a relative unit, which is all the
-optimizer needs. Supervise the first sessions: a fall produces a garbage
-frame, and the tape measure (`--reward measured`) remains the ground truth.
+optimizer needs. With `--camera-axis x|-x|y|-y` the reward becomes the signed
+component along one image axis, so walking *backwards* scores negative (find
+your build's forward axis by pushing TARS once and checking the sign).
+
+**Fully unsupervised** — add the MPU-6050 IMU (~€3, parallel on the same I2C
+bus, address 0x68): when present it is detected automatically and any
+candidate that leaves TARS not-upright gets a fixed penalty instead of its
+camera score — falling never looks profitable (`--no-imu` to disable).
+A single failed capture or measurement skips that candidate instead of
+killing the session, and every evaluation is recorded to
+`data/gait_training.json`: the dashboard plots the **live learning curve**
+(grey = per-candidate reward, accent = best so far). Without the IMU,
+supervise the first sessions; the tape measure (`--reward measured`)
+remains the ground truth.
 
 `--reward sim` runs the same machinery against a deterministic surrogate
 landscape (used by the test suite to verify the optimizer actually converges)

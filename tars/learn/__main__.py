@@ -27,6 +27,13 @@ def main():
     parser.add_argument("--seed", type=int, default=None)
     parser.add_argument("--save", action="store_true",
                         help="save the result even for --reward sim")
+    parser.add_argument("--camera-axis", choices=["mag", "x", "-x", "y", "-y"],
+                        default="mag",
+                        help="image axis for the camera reward (signed; "
+                             "'mag' = any direction)")
+    parser.add_argument("--no-imu", action="store_true",
+                        help="skip the automatic fall penalty even if an "
+                             "MPU-6050 is present")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -39,15 +46,27 @@ def main():
         print("You need ~2 m of free floor and a tape measure (or floor tiles).")
     elif args.reward == "camera":
         from .vision_reward import CameraReward
-        reward_fn = CameraReward(gaits, steps=args.steps)
+        reward_fn = CameraReward(gaits, steps=args.steps, axis=args.camera_axis)
         print(f"Camera-rewarded training: {args.iterations} candidates x "
               f"{args.steps} steps. Keep the scene static; Ctrl-C saves the "
               "best gait found so far.")
     else:
         reward_fn = SimReward(noise=0.3, seed=args.seed)
 
+    if args.reward in ("measured", "camera") and not args.no_imu:
+        from ..sensors import get_imu
+        from .rewards import FallGuard
+        imu = get_imu()
+        if imu.available:
+            reward_fn = FallGuard(reward_fn, imu)
+            print("MPU-6050 detected: automatic fall penalty active.")
+
+    from .training_log import TrainingLog
+    train_log = TrainingLog(args.reward)
     optimizer = GaitOptimizer(reward_fn, seed=args.seed)
-    result = optimizer.optimize(start=dict(gaits.gp), iterations=args.iterations)
+    result = optimizer.optimize(
+        start=dict(gaits.gp), iterations=args.iterations,
+        on_step=lambda i, _params, reward, best: train_log.record(i, reward, best))
 
     print(f"\nBest reward: {result.best_reward:.3f}")
     print("Best parameters:")

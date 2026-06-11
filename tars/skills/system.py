@@ -47,6 +47,10 @@ def system_status(ctx):
     temp = read_cpu_temp()
     if temp is not None:
         parts.append(f"CPU {temp} C")
+    from ..sensors import get_imu
+    upright = get_imu().is_upright()
+    if upright is not None:
+        parts.append("attitude upright" if upright else "attitude FALLEN")
     up = int(time.monotonic() - _BOOT)
     parts.append(f"runtime up {up // 3600}h{(up % 3600) // 60:02d}m")
     du = shutil.disk_usage("/")

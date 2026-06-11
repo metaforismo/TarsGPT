@@ -152,6 +152,11 @@ def create_app(s: Settings, brain: Brain, gaits, voice: VoiceLoop) -> Flask:
                  for n in brain.memory.notes[-50:]]
         return jsonify(notes=notes, turns=brain.memory.turns[-20:])
 
+    @app.get("/api/training")
+    def training():
+        from ..learn.training_log import TrainingLog
+        return jsonify(TrainingLog.load() or {})
+
     @app.get("/api/knowledge")
     def knowledge():
         kg = brain.ctx.extras.get("knowledge")

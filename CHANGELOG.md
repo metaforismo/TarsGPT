@@ -2,6 +2,23 @@
 
 All notable changes to TarsGPT. Dates are merge dates.
 
+## 1.3.0 — 2026-06
+
+- **MPU-6050 IMU support** (`tars/sensors.py`): orientation and fall
+  detection over I2C, graceful without the sensor; attitude reported by
+  `system_status`
+- **Unsupervised gait training**: with the IMU present, `FallGuard`
+  automatically replaces the reward with a penalty whenever a candidate
+  leaves TARS not-upright (`--no-imu` to disable)
+- **Signed camera reward** (`--camera-axis x|-x|y|-y`): walking backwards
+  now scores negative
+- **Resilient sessions**: a failed capture/measurement skips that candidate
+  instead of aborting training
+- **Live learning curve**: every evaluation logged to
+  `data/gait_training.json`, plotted in the dashboard (`/api/training`)
+- Suite grown to 38 tests
+- Shopping lists updated: MPU-6050 is now supported, not just roadmap
+
 ## 1.2.0 — 2026-06
 
 - **Camera reward** for gait training (`--reward camera`): frames before and

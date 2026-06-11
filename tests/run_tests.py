@@ -408,6 +408,91 @@ def test_optimizer_keyboard_interrupt():
     assert result.best_reward == max(r for _, r in result.history)
 
 
+def test_imu_graceful_without_hardware():
+    from tars.sensors import Imu, get_imu
+    imu = Imu()
+    assert imu.available is False           # no smbus in the test environment
+    assert imu.read_accel() is None
+    assert imu.is_upright() is None
+    assert get_imu() is get_imu()           # singleton
+
+
+def test_fall_guard():
+    from tars.learn import FallGuard
+    class FakeImu:
+        def __init__(self, upright):
+            self.upright = upright
+        def is_upright(self):
+            return self.upright
+    inner = lambda params: 7.5  # noqa: E731
+    said = []
+    assert FallGuard(inner, FakeImu(True), print_fn=said.append)({}) == 7.5
+    assert FallGuard(inner, FakeImu(False), print_fn=said.append)({}) == -5.0
+    assert any("fall" in str(s) for s in said)
+    # sensor missing mid-session (None) must NOT penalize
+    assert FallGuard(inner, FakeImu(None), print_fn=said.append)({}) == 7.5
+
+
+def test_optimizer_skips_failed_evaluations():
+    from tars.learn import GaitOptimizer, SimReward, SEARCH_SPACE
+    sim = SimReward(noise=0.0)
+    calls = {"n": 0}
+    def flaky(params):
+        calls["n"] += 1
+        if calls["n"] == 3:
+            raise RuntimeError("camera glitch")
+        return sim(params)
+    result = GaitOptimizer(flaky, seed=2).optimize(
+        start={spec.name: spec.lo for spec in SEARCH_SPACE}, iterations=10)
+    assert calls["n"] == 11                       # baseline + 10 attempted
+    assert len(result.history) == 10              # one evaluation was skipped
+    assert result.best_reward == max(r for _, r in result.history)
+
+
+def test_camera_axis_signed():
+    try:
+        import cv2  # noqa: F401
+        import numpy as np
+    except ImportError:
+        print("  (opencv missing, skipped)")
+        return
+    from tars.learn import CameraReward
+    gaits = Gaits(ServoDriver(60, sim=True), settings)
+    rng = np.random.default_rng(2)
+    scene = (rng.random((120, 160)) * 255).astype(np.uint8)
+    def make(axis):
+        frames = iter([scene, np.roll(scene, 9, axis=1)])
+        return CameraReward(gaits, steps=3, capture_fn=lambda: next(frames),
+                            print_fn=lambda *_: None, axis=axis)
+    vx = make("x")(dict(gaits.gp))
+    vneg = make("-x")(dict(gaits.gp))
+    assert abs(abs(vx) - 3) < 0.5 and vneg == -vx  # signed and consistent
+    try:
+        CameraReward(gaits, axis="diagonal")
+        raise AssertionError("invalid axis accepted")
+    except ValueError:
+        pass
+
+
+def test_training_log_and_endpoint():
+    from tars.learn import TrainingLog
+    from tars.learn.training_log import TRAINING_LOG_FILE
+    train_log = TrainingLog("sim")
+    train_log.record(1, 2.5, 2.5)
+    train_log.record(2, 1.0, 2.5)
+    loaded = TrainingLog.load()
+    assert loaded["mode"] == "sim" and len(loaded["entries"]) == 2
+    assert loaded["entries"][1]["best"] == 2.5
+    ctx = make_ctx()
+    brain = Brain(settings, ctx.memory, ctx)
+    spk = Speaker(settings)
+    spk.muted = True
+    app = create_app(settings, brain, ctx.gaits, VoiceLoop(settings, brain, spk))
+    data = app.test_client().get("/api/training").json
+    assert len(data["entries"]) == 2
+    TRAINING_LOG_FILE.unlink()
+
+
 def test_measured_reward_flow():
     """MeasuredReward must drive the robot and parse the operator's input."""
     from tars.learn import MeasuredReward
