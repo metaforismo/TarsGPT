@@ -1,5 +1,7 @@
 # TarsGPT — A Complete AI Robot Inspired by TARS
 
+[![CI](https://github.com/metaforismo/TarsGPT/actions/workflows/ci.yml/badge.svg)](https://github.com/metaforismo/TarsGPT/actions/workflows/ci.yml)
+
 🇬🇧 English | 🇮🇹 [Italiano più sotto](#tarsgpt--un-robot-ia-completo-ispirato-a-tars)
 
 ![TARS](https://github.com/user-attachments/assets/cb7f6acf-b7c4-41ff-ab1a-2640e8610c68)
@@ -8,11 +10,15 @@ TarsGPT is a **complete, self-contained robot project**: an original Python runt
 
 ## ✨ Features
 
-- 🧩 **Skills plugin system** — drop a decorated Python function in `tars/skills/` and it becomes an LLM tool automatically; 14 built-in skills
+- 🧩 **Skills plugin system** — drop a decorated Python function in `tars/skills/` and it becomes an LLM tool automatically; 18 built-in skills
+- 🖥️ **Local or cloud LLM** — OpenAI, or fully local via Ollama/LM Studio (`TARS_LLM_BASE_URL`); free local neural voice with Piper TTS
+- 🎭 **Character cards** — switch between TARS, CASE and KIPP (or your own) by voice or dashboard
+- 🕺 **Choreographed sequences** — greet, wiggle, patrol or your own routines ("TARS, do a little dance")
 - 🕸️ **Knowledge graph** — structured facts ("Francesco owns a P1S") learned, deduplicated, persisted and injected when relevant
 - 🪪 **Speaker identification** *(experimental)* — enroll your voice and TARS knows who's talking
 - 📱 **Browser voice mode** — talk to TARS from any phone/PC on the network, replies stream back as audio
-- 🏠 **Home Assistant & music** — control smart-home devices, play radio stations or local files
+- 🏠 **Home Assistant, music, images, volume** — smart-home control, radio/local music, DALL·E previews in chat, mixer control
+- 🔐 **Dashboard login & themes** — optional password gate, 4 UI themes; autostart via systemd (`deploy/tars.service`)
 - ⚡ **Streaming voice pipeline** — the reply is spoken sentence by sentence *while the LLM is still generating*; the web chat streams too (SSE)
 - 🗣️ **Hands-free voice AI** — offline wake word ("TARS"), Whisper or Vosk speech recognition, ElevenLabs/OpenAI/espeak text-to-speech with automatic fallback
 - 🧠 **Adjustable personality** — humor, honesty and sarcasm from 0 to 100%, changeable from the dashboard or by simply *asking the robot*
@@ -64,6 +70,8 @@ tars/                # the robot runtime (original implementation)
   voice.py stt.py tts.py audio.py
   movement/          # PCA9685 driver, gaits, gamepad
   web/               # Flask dashboard (SSE chat, browser voice mode)
+characters/          # persona cards: tars, case, kipp (add your own)
+deploy/tars.service  # systemd unit for autostart on boot
 tests/run_tests.py   # full test suite (no hardware/keys needed)
 servo_tester.py      # interactive servo calibration
 legacy/              # the original gamepad-only scripts (kept for reference)
@@ -82,11 +90,15 @@ TarsGPT è un **progetto robot completo e autonomo**: un runtime Python original
 
 ## ✨ Funzionalità
 
-- 🧩 **Sistema di skill a plugin** — metti una funzione Python decorata in `tars/skills/` e diventa automaticamente un tool dell'LLM; 14 skill integrate
+- 🧩 **Sistema di skill a plugin** — metti una funzione Python decorata in `tars/skills/` e diventa automaticamente un tool dell'LLM; 18 skill integrate
+- 🖥️ **LLM locale o cloud** — OpenAI, oppure tutto in locale via Ollama/LM Studio (`TARS_LLM_BASE_URL`); voce neurale locale gratuita con Piper TTS
+- 🎭 **Character card** — passa da TARS a CASE a KIPP (o ai tuoi) a voce o da dashboard
+- 🕺 **Sequenze coreografate** — greet, wiggle, patrol o le tue routine ("TARS, balla")
 - 🕸️ **Knowledge graph** — fatti strutturati ("Francesco possiede una P1S") appresi, deduplicati, persistenti e iniettati quando rilevanti
 - 🪪 **Identificazione speaker** *(sperimentale)* — registra la tua voce e TARS sa chi sta parlando
 - 📱 **Voce dal browser** — parla con TARS da qualsiasi telefono/PC in rete, le risposte tornano come audio
-- 🏠 **Home Assistant e musica** — controlla la domotica, riproduci stazioni radio o file locali
+- 🏠 **Home Assistant, musica, immagini, volume** — domotica, radio/musica locale, anteprime DALL·E in chat, controllo mixer
+- 🔐 **Login e temi dashboard** — protezione con password opzionale, 4 temi UI; avvio automatico via systemd (`deploy/tars.service`)
 - ⚡ **Pipeline vocale in streaming** — la risposta viene pronunciata frase per frase *mentre l'LLM sta ancora generando*; anche la chat web è in streaming (SSE)
 - 🗣️ **IA vocale a mani libere** — wake word offline ("TARS"), riconoscimento Whisper o Vosk, sintesi ElevenLabs/OpenAI/espeak con fallback automatico
 - 🧠 **Personalità regolabile** — umorismo, onestà e sarcasmo da 0 a 100%, modificabili dalla dashboard o semplicemente *chiedendolo al robot*

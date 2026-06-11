@@ -26,10 +26,17 @@ class Brain:
         self._client = None
 
     @property
+    def configured(self) -> bool:
+        """True with an OpenAI key OR any OpenAI-compatible local server
+        (Ollama, LM Studio, llama.cpp, vLLM) via TARS_LLM_BASE_URL."""
+        return bool(self.s.openai_api_key or self.s.llm_base_url)
+
+    @property
     def client(self):
         if self._client is None:
             from openai import OpenAI
-            self._client = OpenAI(api_key=self.s.openai_api_key)
+            self._client = OpenAI(api_key=self.s.openai_api_key or "local",
+                                  base_url=self.s.llm_base_url or None)
         return self._client
 
     def chat(self, user_text: str, speaker: str | None = None) -> str:
@@ -38,8 +45,9 @@ class Brain:
     def chat_stream(self, user_text: str, speaker: str | None = None):
         """Yield reply text chunks; runs skill calls transparently in between.
         speaker: optional identified speaker name (prefixed into the context)."""
-        if not self.s.openai_api_key:
-            yield "My cognitive core is offline: no OPENAI_API_KEY configured."
+        if not self.configured:
+            yield ("My cognitive core is offline: set OPENAI_API_KEY or "
+                   "TARS_LLM_BASE_URL for a local model.")
             return
 
         messages = [{"role": "system", "content": system_prompt(self.s)}]

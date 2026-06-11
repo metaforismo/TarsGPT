@@ -24,6 +24,7 @@ class Memory:
     def __init__(self, s: Settings | None = None):
         self.s = s
         self._lock = threading.Lock()
+        self._client = None
         self.turns: list[dict] = []
         self.notes: list[dict] = []   # {"ts", "note", "emb": [...] | None}
         self._load()
@@ -101,10 +102,11 @@ class Memory:
         if not (self.s and self.s.openai_api_key):
             return None
         try:
-            from openai import OpenAI
-            client = OpenAI(api_key=self.s.openai_api_key)
-            resp = client.embeddings.create(model=self.s.embedding_model,
-                                            input=text[:2000])
+            if self._client is None:
+                from openai import OpenAI
+                self._client = OpenAI(api_key=self.s.openai_api_key)
+            resp = self._client.embeddings.create(model=self.s.embedding_model,
+                                                  input=text[:2000])
             return resp.data[0].embedding
         except Exception as e:
             log.warning("embedding failed (%s), using keyword fallback", e)

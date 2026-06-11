@@ -1,5 +1,6 @@
-"""Body movement skill."""
+"""Body movement and choreographed sequence skills."""
 from . import skill
+from ..movement import sequences
 
 
 @skill("move",
@@ -15,3 +16,14 @@ def move(ctx, action, repeat=1):
     for _ in range(int(repeat)):
         getattr(ctx.gaits, action)()
     return f"ok: executed {action} x{repeat}"
+
+
+@skill("perform",
+       "Perform a named choreographed movement sequence (greet, wiggle, patrol, "
+       "or any custom one). Use when asked to dance, greet, patrol or show off.",
+       {"type": "object", "properties": {"name": {"type": "string"}},
+        "required": ["name"]})
+def perform(ctx, name):
+    if ctx.gaits is None:
+        return "error: no servo hardware attached"
+    return sequences.perform(name, ctx.gaits)

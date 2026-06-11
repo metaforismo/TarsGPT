@@ -38,6 +38,7 @@
     fill="none" stroke="#62d0ff" stroke-width="2"/><line x1="6.5" y1="1" x2="6.5" y2="33" stroke="#2a313a"/>
     <line x1="11" y1="1" x2="11" y2="33" stroke="#2a313a"/><line x1="15.5" y1="1" x2="15.5" y2="33" stroke="#2a313a"/></svg>
   <h1 id="name">TARS</h1>
+  <button onclick="nextTheme()" style="margin-left:8px" title="Theme">🎨</button>
   <span id="status">connecting…</span>
 </header>
 
@@ -61,6 +62,8 @@
     </div>
     <h2>Knowledge</h2>
     <div id="facts" style="font-size:12px;color:#8b96a3;max-height:140px;overflow-y:auto"></div>
+    <h2>Character</h2>
+    <select id="character" onchange="setCharacter()" style="width:100%;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px"></select>
     <h2>Personality</h2>
     <label>Humor <span id="humorVal"></span></label>
     <input type="range" id="humor" min="0" max="100" onchange="saveSettings()">
@@ -89,6 +92,27 @@ function add(cls, text) {
   return div;
 }
 
+function renderImages(div) {
+  // turn generated-image paths in TARS replies into inline previews
+  const m = div.textContent.match(/\/images\/[\w.-]+\.(png|jpe?g|webp)/g);
+  (m || []).forEach(src => {
+    const img = document.createElement('img');
+    img.src = src;
+    img.style.cssText = 'max-width:100%;border-radius:8px;display:block;margin-top:8px';
+    div.appendChild(img);
+  });
+}
+
+async function doLogin() {
+  for (;;) {
+    const pw = prompt('TARS dashboard password:');
+    if (pw === null) return false;
+    const r = await fetch('/api/login', {method:'POST', headers:{'Content-Type':'application/json'},
+                                         body: JSON.stringify({password: pw})});
+    if (r.ok) { location.reload(); return true; }
+  }
+}
+
 async function send() {
   const text = box.value.trim();
   if (!text) return;
@@ -114,6 +138,7 @@ async function send() {
       }
     }
     if (!reply) pending.textContent = '(no reply)';
+    renderImages(pending);
   } catch (e) { pending.textContent = 'Connection error: ' + e; }
 }
 box.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
@@ -190,16 +215,47 @@ async function saveSettings() {
   await fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'},
                                 body: JSON.stringify(body)});
 }
+const THEMES = [
+  {bg:'#0b0e11', panel:'#14181d', line:'#2a313a', fg:'#d7dde4', acc:'#62d0ff'},  // deep space
+  {bg:'#0d0b07', panel:'#1a150c', line:'#3a2f1a', fg:'#e8d9b0', acc:'#ffb347'},  // amber CRT
+  {bg:'#070b09', panel:'#0e1713', line:'#1f3a2d', fg:'#cfe8d9', acc:'#4ade80'},  // terminal green
+  {bg:'#f4f4f2', panel:'#ffffff', line:'#d4d4d0', fg:'#1d2024', acc:'#0369a1'},  // daylight
+];
+function applyTheme(i) {
+  const t = THEMES[i % THEMES.length];
+  for (const [k, v] of Object.entries(t)) document.documentElement.style.setProperty('--' + k, v);
+  localStorage.setItem('tars_theme', i % THEMES.length);
+}
+function nextTheme() { applyTheme((+localStorage.getItem('tars_theme') || 0) + 1); }
+applyTheme(+localStorage.getItem('tars_theme') || 0);
+
+async function loadCharacters() {
+  try {
+    const data = await (await fetch('/api/characters')).json();
+    const sel = document.getElementById('character');
+    sel.innerHTML = (data.available || []).map(c =>
+      `<option value="${c}" ${c === data.active ? 'selected' : ''}>${c.toUpperCase()}</option>`).join('');
+  } catch {}
+}
+async function setCharacter() {
+  const name = document.getElementById('character').value;
+  const r = await fetch('/api/characters', {method:'POST', headers:{'Content-Type':'application/json'},
+                                            body: JSON.stringify({name})});
+  if (r.ok) loadSettings();
+}
+
 async function poll() {
   try {
-    const st = await (await fetch('/api/status')).json();
+    const res = await fetch('/api/status');
+    if (res.status === 401) { await doLogin(); return; }
+    const st = await res.json();
     let line = (st.sim ? 'SIM MODE · ' : '') + 'voice: ' + st.voice;
     if (st.battery_pct !== null && st.battery_pct !== undefined) line += ' · 🔋 ' + st.battery_pct + '%';
     if (st.cpu_temp !== null && st.cpu_temp !== undefined) line += ' · ' + st.cpu_temp + '°C';
     document.getElementById('status').textContent = line;
   } catch { document.getElementById('status').textContent = 'offline'; }
 }
-loadSettings(); poll(); loadFacts();
+loadSettings(); poll(); loadFacts(); loadCharacters();
 setInterval(poll, 3000); setInterval(loadFacts, 10000);
 </script>
 </body>

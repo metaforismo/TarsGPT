@@ -44,11 +44,19 @@ def _vosk(wav_path: str, s: Settings) -> str:
 
 _model_cache = {}
 
+# Vosk model identifiers differ from our two-letter codes where noted
+VOSK_LANG = {"en": "en-us", "pt": "pt-br"}
+
+
+def vosk_lang(language: str) -> str:
+    return VOSK_LANG.get(language, language)
+
 
 def _vosk_model(s: Settings):
     """Load (and cache) the small Vosk model for the configured language."""
     from vosk import Model
-    if s.language not in _model_cache:
-        # expects e.g. data/vosk-model-small-en-us-0.15 or model name for lang
-        _model_cache[s.language] = Model(lang=s.language)
-    return _model_cache[s.language]
+    lang = vosk_lang(s.language)
+    if lang not in _model_cache:
+        # downloads the small model on first use (e.g. vosk-model-small-en-us)
+        _model_cache[lang] = Model(lang=lang)
+    return _model_cache[lang]

@@ -6,7 +6,15 @@
 
 | Feature | How it works | Module |
 |---|---|---|
-| **Skills plugin system** | Drop a Python file in `tars/skills/`, decorate a function with `@skill` — it auto-registers as an LLM tool at startup. 14 built-in skills | `tars/skills/` |
+| **Skills plugin system** | Drop a Python file in `tars/skills/`, decorate a function with `@skill` — it auto-registers as an LLM tool at startup. 18 built-in skills | `tars/skills/` |
+| **Local or cloud LLM** | OpenAI cloud, or any OpenAI-compatible server — Ollama, LM Studio, llama.cpp, vLLM — via `TARS_LLM_BASE_URL`. A fully offline TARS is possible | `tars/llm.py` |
+| **Character cards** | Switchable personas in `characters/*.json` (TARS, CASE, KIPP included): name, persona text, default dials. "Become CASE" works by voice, dashboard or API | `tars/characters.py` |
+| **Choreographed sequences** | Named movement routines (greet, wiggle, patrol + your own in `data/sequences.json`); "TARS, do a little dance" → `perform` skill | `tars/movement/sequences.py` |
+| **Piper TTS** | Free, local neural text-to-speech: install `piper`, download a voice, set `TARS_PIPER_VOICE` — sits in the fallback chain before espeak | `tars/tts.py` |
+| **Volume control** | `set_volume` skill via amixer/pactl | `tars/skills/system.py` |
+| **Image generation** | `generate_image` skill (DALL·E 3): saved under `data/images/`, previewed inline in the dashboard chat | `tars/skills/images.py` |
+| **Dashboard login** | Optional shared password (`TARS_WEB_PASSWORD`) gating all API routes with session cookies | `tars/web/server.py` |
+| **UI themes** | 4 dashboard themes (deep space, amber CRT, terminal green, daylight), persisted per browser | `tars/web/static/` |
 | **Knowledge graph** | Structured subject-relation-object facts (`learn_fact`/`query_facts`/`forget_facts`), deduplicated, persisted, auto-injected into the context when relevant, browsable in the dashboard | `tars/knowledge.py` |
 | **Speaker identification** *(experimental)* | Band-energy + pitch voice fingerprints; enroll with "learn my voice, I'm Francesco", then TARS knows who's talking and the LLM sees `[Francesco is speaking]` | `tars/speakerid.py`, `tars/skills/speakers.py` |
 | **Browser voice mode** | Talk to TARS from any phone/PC on the network: the dashboard records your mic, the robot transcribes, replies and streams the audio back to the browser | `/api/voice/chat` + `/api/tts` |
@@ -104,10 +112,35 @@ Restart. That's it — no registration files, no dispatch chain to edit. The LLM
 | `/api/voice/chat` | POST | multipart `audio` file | **Browser voice mode**: audio in → `{heard, reply}` |
 | `/api/tts` | POST | `{"text": "..."}` | Synthesized audio file (browser playback) |
 | `/api/voice/start\|stop\|ptt` | POST | — | Voice loop control / push-to-talk |
+| `/api/characters` | GET/POST | `{"name": "case"}` | List / switch character cards |
+| `/api/login` | POST | `{"password": "..."}` | Session login when `TARS_WEB_PASSWORD` is set |
+| `/images/<file>` | GET | — | Generated images |
 
 ## Configuration reference
 
-All via `.env` (see `.env.example`): `OPENAI_API_KEY`, `TARS_MODEL`, `TARS_EMBEDDING_MODEL`, `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `TARS_LANGUAGE`, `TARS_WAKE_WORD`, `TARS_TTS`, `TARS_STT`, `TARS_SIM`, `TARS_GAMEPAD`, `TARS_WEB_PORT`. Personality and PWM calibration persist in `data/settings.json`; long-term memory (with embeddings) in `data/memory.json`.
+All via `.env` (see `.env.example`): `OPENAI_API_KEY`, `TARS_LLM_BASE_URL`, `TARS_MODEL`, `TARS_EMBEDDING_MODEL`, `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `TARS_PIPER_VOICE`, `TARS_LANGUAGE`, `TARS_WAKE_WORD`, `TARS_TTS`, `TARS_STT`, `TARS_SIM`, `TARS_GAMEPAD`, `TARS_WEB_PORT`, `TARS_WEB_PASSWORD`, `HA_URL`, `HA_TOKEN`, `TARS_MUSIC_DIR`. Personality and PWM calibration persist in `data/settings.json`; long-term memory (with embeddings) in `data/memory.json`.
+
+## Autostart on boot
+
+```bash
+sudo cp deploy/tars.service /etc/systemd/system/   # adjust paths inside if needed
+sudo systemctl daemon-reload
+sudo systemctl enable --now tars
+journalctl -u tars -f                               # live logs
+```
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| Servos jitter or twitch | Power problem 9 times out of 10: buck converter not at **6.2 V**, undersized battery, or missing **common ground** between PCA9685 V+ rail and the Pi |
+| `No PCA9685 found` on the robot | Enable I2C (`sudo raspi-config`), then `i2cdetect -y 1` should show `0x40`; check SDA/SCL wiring |
+| Microphone not picked up | `arecord -l` to list devices; set the USB card as default in `~/.asoundrc` |
+| No sound | `aplay -l`, test with `speaker-test -t wav`; make sure the USB sound card, not HDMI, is the default sink |
+| Wake word never triggers | Vosk downloads its model on first use — needs internet once; or set `TARS_STT=openai` and use push-to-talk |
+| Browser mic button does nothing | Browsers only allow microphone on HTTPS or localhost. Easiest workaround: `ssh -L 8000:localhost:8000 pi@tars.local`, then open `http://localhost:8000` |
+| Gamepad not detected | It is autodetected now; if it still fails, find it with `python -c "import evdev; print(evdev.list_devices())"` and set `TARS_GAMEPAD` |
+| Replies are slow | Use `gpt-4o-mini` (default), keep ElevenLabs (it streams per sentence), or go local with Ollama on a PC and `TARS_LLM_BASE_URL` |
 
 ## Design notes — how this compares to the reference community project
 

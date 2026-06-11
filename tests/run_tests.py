@@ -29,7 +29,8 @@ from tars.web.server import create_app  # noqa: E402
 EXPECTED_SKILLS = {"move", "remember", "recall", "set_personality", "set_timer",
                    "look", "system_status", "learn_fact", "query_facts",
                    "forget_facts", "play_music", "stop_music",
-                   "home_assistant", "enroll_speaker"}
+                   "home_assistant", "enroll_speaker", "perform",
+                   "set_character", "set_volume", "generate_image"}
 
 skills.load_skills()  # populate the registry once for every test
 
@@ -161,6 +162,98 @@ def test_speaker_identification():
     assert sid.identify(_tone_wav([(700, 1.0), (1400, 1.0)])) is None
 
 
+def test_sequences():
+    ctx = make_ctx()
+    assert skills.run("perform", {"name": "wiggle"}, ctx) == "ok: performed wiggle"
+    result = skills.run("perform", {"name": "moonwalk"}, ctx)
+    assert result.startswith("error") and "greet" in result
+
+
+def test_characters():
+    from tars import characters
+    from tars.personality import system_prompt
+    assert set(characters.list_characters()) >= {"tars", "case", "kipp"}
+    ctx = make_ctx()
+    assert "CASE" in skills.run("set_character", {"name": "case"}, ctx)
+    assert settings.robot_name == "CASE" and settings.humor == 25
+    assert "CASE" in system_prompt(settings) and "reserved" in system_prompt(settings)
+    bad = skills.run("set_character", {"name": "hal9000"}, ctx)
+    assert bad.startswith("error") and "kipp" in bad
+    assert characters.apply_character("tars", settings)  # restore default
+    assert settings.robot_name == "TARS"
+
+
+def test_tts_engine_chain():
+    from tars import tts
+    old_engine, old_el, old_oa = settings.tts_engine, settings.elevenlabs_api_key, \
+        settings.openai_api_key
+    try:
+        settings.tts_engine = "espeak"
+        assert tts.engine_chain(settings) == ["espeak", "piper"]
+        settings.tts_engine = "auto"
+        settings.elevenlabs_api_key = "x"
+        settings.openai_api_key = "y"
+        chain = tts.engine_chain(settings)
+        assert chain == ["elevenlabs", "openai", "piper", "espeak"]
+        assert len(chain) == len(set(chain))  # no duplicates
+    finally:
+        settings.tts_engine, settings.elevenlabs_api_key = old_engine, old_el
+        settings.openai_api_key = old_oa
+
+
+def test_vosk_lang_and_battery_math():
+    from tars.stt import vosk_lang
+    from tars.skills.system import battery_percent
+    assert vosk_lang("en") == "en-us"
+    assert vosk_lang("it") == "it"
+    assert battery_percent(12.6) == 100   # 3S full
+    assert battery_percent(9.0) == 0      # 3S empty
+    assert 40 < battery_percent(11.1) < 70
+
+
+def test_pwm_settings_merge():
+    import json
+    from tars.config import Settings, SETTINGS_FILE, DATA_DIR
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    SETTINGS_FILE.write_text(json.dumps({"pwm": {"up_height": 999}}))
+    fresh = Settings().load()
+    assert fresh.pwm["up_height"] == 999          # stored value wins
+    assert "neutral_port" in fresh.pwm            # new defaults survive
+    SETTINGS_FILE.unlink()
+
+
+def test_volume_and_gamepad_paths():
+    ctx = make_ctx()
+    result = skills.run("set_volume", {"percent": 50}, ctx)
+    assert result.startswith(("ok", "error"))     # depends on mixer presence
+    from tars.movement.gamepad import find_gamepad
+    assert find_gamepad() is None or isinstance(find_gamepad(), str)
+
+
+def test_image_generation_requires_key():
+    ctx = make_ctx()
+    if not settings.openai_api_key:
+        assert "API key" in skills.run("generate_image", {"prompt": "a robot"}, ctx)
+
+
+def test_web_auth():
+    settings.web_password = "secret"
+    try:
+        ctx = make_ctx()
+        brain = Brain(settings, ctx.memory, ctx)
+        spk = Speaker(settings)
+        spk.muted = True
+        app = create_app(settings, brain, ctx.gaits, VoiceLoop(settings, brain, spk))
+        c = app.test_client()
+        assert c.get("/").status_code == 200                       # page loads
+        assert c.get("/api/status").status_code == 401             # API locked
+        assert c.post("/api/login", json={"password": "nope"}).status_code == 403
+        assert c.post("/api/login", json={"password": "secret"}).status_code == 200
+        assert c.get("/api/status").status_code == 200             # cookie accepted
+    finally:
+        settings.web_password = ""
+
+
 def test_brain_offline():
     ctx = make_ctx()
     brain = Brain(settings, ctx.memory, ctx)
@@ -193,6 +286,8 @@ def test_web_endpoints():
                ctx)
     assert any(t["s"] == "test" for t in c.get("/api/knowledge").json["triples"])
 
+    assert "tars" in c.get("/api/characters").json["available"]
+    assert c.get("/images/nope.png").status_code == 404
     assert c.post("/api/voice/chat").status_code == 400          # no file
     assert c.post("/api/tts", json={"text": ""}).status_code == 400
     r = c.post("/api/tts", json={"text": "hello"})

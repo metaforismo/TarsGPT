@@ -3,6 +3,7 @@ personality tuning, knowledge inspector and vitals."""
 import json
 import logging
 import os
+import secrets
 import shutil
 import subprocess
 import tempfile
@@ -10,8 +11,8 @@ import threading
 from pathlib import Path
 from flask import Flask, Response, jsonify, request, send_file, send_from_directory
 
-from .. import stt, tts
-from ..config import Settings
+from .. import characters, stt, tts
+from ..config import DATA_DIR, Settings
 from ..llm import Brain
 from ..skills.system import read_battery, read_cpu_temp, battery_percent
 from ..voice import VoiceLoop
@@ -33,10 +34,50 @@ def _to_wav(path: str) -> str | None:
 
 def create_app(s: Settings, brain: Brain, gaits, voice: VoiceLoop) -> Flask:
     app = Flask("tars", static_folder=None)
+    sessions: set[str] = set()
+
+    @app.before_request
+    def auth_gate():
+        """Optional shared-password login (set TARS_WEB_PASSWORD)."""
+        if not s.web_password:
+            return None
+        if request.path in ("/", "/api/login") or request.path.startswith("/images/"):
+            return None
+        token = request.cookies.get("tars_session", "")
+        if token in sessions:
+            return None
+        return jsonify(error="login required"), 401
+
+    @app.post("/api/login")
+    def login():
+        if not s.web_password:
+            return jsonify(ok=True)
+        if (request.json or {}).get("password", "") != s.web_password:
+            return jsonify(error="wrong password"), 403
+        token = secrets.token_hex(16)
+        sessions.add(token)
+        resp = jsonify(ok=True)
+        resp.set_cookie("tars_session", token, httponly=True, samesite="Lax")
+        return resp
 
     @app.get("/")
     def index():
         return send_from_directory(STATIC, "index.html")
+
+    @app.get("/images/<path:fname>")
+    def images(fname):
+        return send_from_directory(DATA_DIR / "images", fname)
+
+    @app.get("/api/characters")
+    def get_characters():
+        return jsonify(available=characters.list_characters(), active=s.character)
+
+    @app.post("/api/characters")
+    def post_character():
+        name = (request.json or {}).get("name", "")
+        if not characters.apply_character(name, s):
+            return jsonify(error="unknown character"), 404
+        return jsonify(ok=True, active=s.character, robot_name=s.robot_name)
 
     @app.post("/api/chat")
     def chat():

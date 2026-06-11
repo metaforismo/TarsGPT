@@ -19,14 +19,15 @@ log = logging.getLogger("tars.tts")
 
 def engine_chain(s: Settings) -> list[str]:
     if s.tts_engine != "auto":
-        return [s.tts_engine, "espeak"]
-    chain = []
-    if s.elevenlabs_api_key:
-        chain.append("elevenlabs")
-    if s.openai_api_key:
-        chain.append("openai")
-    chain.append("espeak")
-    return chain
+        chain = [s.tts_engine, "piper", "espeak"]
+    else:
+        chain = []
+        if s.elevenlabs_api_key:
+            chain.append("elevenlabs")
+        if s.openai_api_key:
+            chain.append("openai")
+        chain += ["piper", "espeak"]  # local engines close the chain
+    return list(dict.fromkeys(chain))  # dedupe, keep order
 
 
 def synthesize(text: str, s: Settings) -> str | None:
@@ -35,7 +36,8 @@ def synthesize(text: str, s: Settings) -> str | None:
         return None
     for engine in engine_chain(s):
         try:
-            fn = {"elevenlabs": _elevenlabs, "openai": _openai, "espeak": _espeak}[engine]
+            fn = {"elevenlabs": _elevenlabs, "openai": _openai,
+                  "piper": _piper, "espeak": _espeak}[engine]
             path = fn(text, s)
             if path:
                 return path
@@ -76,6 +78,20 @@ def _openai(text: str, s: Settings) -> str:
             model="gpt-4o-mini-tts", voice="onyx", input=text) as resp:
         resp.stream_to_file(path)
     return path
+
+
+def _piper(text: str, s: Settings) -> str | None:
+    """Piper: free, fully local neural TTS. Install the binary and download a
+    voice (.onnx), then set TARS_PIPER_VOICE=/path/to/voice.onnx."""
+    exe = shutil.which("piper")
+    if not exe or not s.piper_voice:
+        return None
+    path = tempfile.mktemp(suffix=".wav", prefix="tars_tts_")
+    result = subprocess.run([exe, "--model", s.piper_voice, "--output_file", path],
+                            input=text.encode(), capture_output=True, timeout=60)
+    import os
+    ok = result.returncode == 0 and os.path.exists(path) and os.path.getsize(path) > 0
+    return path if ok else None
 
 
 def _espeak(text: str, s: Settings) -> str | None:

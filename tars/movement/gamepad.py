@@ -13,6 +13,25 @@ KEYMAP = {
 }
 
 
+GAMEPAD_NAMES = ("8bitdo", "gamepad", "controller", "joystick", "joypad")
+
+
+def find_gamepad() -> str | None:
+    """Scan input devices for something that looks like a game controller."""
+    try:
+        import evdev
+    except ImportError:
+        return None
+    for path in evdev.list_devices():
+        try:
+            dev = evdev.InputDevice(path)
+            if any(tag in dev.name.lower() for tag in GAMEPAD_NAMES):
+                return path
+        except (OSError, PermissionError):
+            continue
+    return None
+
+
 def run(gaits: Gaits, device_path: str):
     """Blocking event loop; run it in its own thread."""
     try:
@@ -22,9 +41,14 @@ def run(gaits: Gaits, device_path: str):
         return
     try:
         pad = InputDevice(device_path)
-    except (FileNotFoundError, PermissionError) as e:
-        log.warning("Gamepad not available at %s (%s)", device_path, e)
-        return
+    except (FileNotFoundError, PermissionError):
+        found = find_gamepad()
+        if found is None:
+            log.warning("No gamepad at %s and none autodetected", device_path)
+            return
+        log.info("Gamepad autodetected at %s (configured %s was unavailable)",
+                 found, device_path)
+        pad = InputDevice(found)
 
     log.info("Gamepad connected: %s", pad.name)
     arm_direction = 1  # toggled by +/- buttons

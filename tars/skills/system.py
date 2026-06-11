@@ -1,5 +1,6 @@
-"""System status skill: battery (INA260), CPU temperature, uptime, disk."""
+"""System skills: vitals (battery, CPU, uptime, disk) and volume control."""
 import shutil
+import subprocess
 import time
 from . import skill
 
@@ -51,3 +52,23 @@ def system_status(ctx):
     du = shutil.disk_usage("/")
     parts.append(f"disk {du.free // 2**30} GiB free of {du.total // 2**30}")
     return "; ".join(parts)
+
+
+@skill("set_volume",
+       "Set your speaker volume, 0-100 percent.",
+       {"type": "object", "properties": {
+           "percent": {"type": "integer", "minimum": 0, "maximum": 100}},
+        "required": ["percent"]})
+def set_volume(ctx, percent):
+    pct = max(0, min(100, int(percent)))
+    if shutil.which("amixer"):
+        r = subprocess.run(["amixer", "-M", "sset", "Master", f"{pct}%"],
+                           capture_output=True)
+        if r.returncode == 0:
+            return f"ok: volume set to {pct}%"
+    if shutil.which("pactl"):
+        r = subprocess.run(["pactl", "set-sink-volume", "@DEFAULT_SINK@", f"{pct}%"],
+                           capture_output=True)
+        if r.returncode == 0:
+            return f"ok: volume set to {pct}%"
+    return "error: no mixer available (install alsa-utils)"

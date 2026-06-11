@@ -20,11 +20,15 @@ class Settings:
     openai_api_key: str = os.environ.get("OPENAI_API_KEY", "")
     openai_model: str = os.environ.get("TARS_MODEL", "gpt-4o-mini")
     embedding_model: str = os.environ.get("TARS_EMBEDDING_MODEL", "text-embedding-3-small")
+    # Any OpenAI-compatible server: Ollama (http://localhost:11434/v1),
+    # LM Studio, llama.cpp, vLLM... leave empty for the OpenAI cloud.
+    llm_base_url: str = os.environ.get("TARS_LLM_BASE_URL", "")
     # --- Voice ---
     tts_engine: str = os.environ.get("TARS_TTS", "auto")        # elevenlabs | openai | espeak | auto
     stt_engine: str = os.environ.get("TARS_STT", "auto")        # openai | vosk | auto
     elevenlabs_api_key: str = os.environ.get("ELEVENLABS_API_KEY", "")
     elevenlabs_voice_id: str = os.environ.get("ELEVENLABS_VOICE_ID", "")
+    piper_voice: str = os.environ.get("TARS_PIPER_VOICE", "")   # path to a piper .onnx voice
     wake_word: str = os.environ.get("TARS_WAKE_WORD", "tars")
     language: str = os.environ.get("TARS_LANGUAGE", "en")       # en | it | ...
     # --- Personality (adjustable at runtime, persisted) ---
@@ -32,9 +36,12 @@ class Settings:
     honesty: int = 90
     sarcasm: int = 30
     robot_name: str = "TARS"
+    character: str = "tars"        # active character card (characters/*.json)
+    persona_extra: str = ""        # extra persona text from the character card
     # --- Web ---
     web_host: str = os.environ.get("TARS_WEB_HOST", "0.0.0.0")
     web_port: int = int(os.environ.get("TARS_WEB_PORT", "8000"))
+    web_password: str = os.environ.get("TARS_WEB_PASSWORD", "")  # empty = no login
     # --- Integrations ---
     ha_url: str = os.environ.get("HA_URL", "")
     ha_token: str = os.environ.get("HA_TOKEN", "")
@@ -64,14 +71,20 @@ class Settings:
         "port_hand": 570, "star_hand": 240,
     })
 
-    PERSISTED = ("humor", "honesty", "sarcasm", "robot_name", "wake_word", "language", "pwm")
+    PERSISTED = ("humor", "honesty", "sarcasm", "robot_name", "character",
+                 "persona_extra", "wake_word", "language", "pwm")
 
     def load(self):
         if SETTINGS_FILE.exists():
             try:
                 stored = json.loads(SETTINGS_FILE.read_text())
                 for key in self.PERSISTED:
-                    if key in stored:
+                    if key not in stored:
+                        continue
+                    if key == "pwm":
+                        # merge so new default keys survive old settings files
+                        self.pwm = {**self.pwm, **stored["pwm"]}
+                    else:
                         setattr(self, key, stored[key])
             except (json.JSONDecodeError, OSError):
                 pass
