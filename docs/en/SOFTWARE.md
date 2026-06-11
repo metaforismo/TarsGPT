@@ -81,7 +81,10 @@ Dashboard: `http://<pi-address>:8000`
 
 0. `python -m tars.app --doctor` — the self-test checks every subsystem
    (I2C, PCA9685, IMU, camera, mic, audio, TTS/STT/LLM, ffmpeg, disk) and
-   tells you what to fix. Run it again after every wiring change.
+   tells you what to fix. Run it again after every wiring change. Once
+   configured, `tars --benchmark` times the LLM/TTS/STT pipeline — useful
+   to compare engines (a spoken answer starts after roughly STT +
+   LLM-first-token + first-sentence TTS).
 1. `sudo raspi-config` → enable **I2C** (and the camera if installed).
 2. `python servo_tester.py` → find min/neutral/max PWM for every channel; **never force a servo past a mechanical stop**.
 3. Put your calibrated values in `data/settings.json` under `"pwm"`.
@@ -165,7 +168,10 @@ your build's forward axis by pushing TARS once and checking the sign).
 **Fully unsupervised** — add the MPU-6050 IMU (~€3, parallel on the same I2C
 bus, address 0x68): when present it is detected automatically and any
 candidate that leaves TARS not-upright gets a fixed penalty instead of its
-camera score — falling never looks profitable (`--no-imu` to disable).
+camera score — falling never looks profitable (`--no-imu` to disable). The
+gyro is also sampled while each candidate walks: the mean angular rate times
+`--wobble-weight` (default 0.01) is subtracted as a **stability tax**, so
+between two gaits covering the same ground the smoother one wins.
 A single failed capture or measurement skips that candidate instead of
 killing the session, and every evaluation is recorded to
 `data/gait_training.json`: the dashboard plots the **live learning curve**
@@ -187,7 +193,10 @@ chromium-browser --kiosk --noerrdialogs http://localhost:8000/display
 ```
 
 Black background, cyan monospace, humor/honesty bars, power and core temp,
-CRT scanlines, blinking cursor. The name pulses while TARS is listening.
+CRT scanlines, blinking cursor — plus an animated waveform tied to the voice
+state: chattering bars while speaking, a synced pulse while listening, a
+chase while thinking and a slow breathe when idle. The name pulses while
+TARS is listening.
 Localhost is exempt from the dashboard password, so the kiosk works even
 with `TARS_WEB_PASSWORD` set.
 

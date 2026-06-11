@@ -81,7 +81,10 @@ Dashboard: `http://<indirizzo-pi>:8000`
 
 0. `python -m tars.app --doctor` — l'autotest controlla ogni sottosistema
    (I2C, PCA9685, IMU, camera, microfono, audio, TTS/STT/LLM, ffmpeg, disco)
-   e ti dice cosa sistemare. Rilancialo dopo ogni modifica al cablaggio.
+   e ti dice cosa sistemare. Rilancialo dopo ogni modifica al cablaggio. A
+   configurazione fatta, `tars --benchmark` cronometra la pipeline
+   LLM/TTS/STT — utile per confrontare i motori (una risposta parlata parte
+   dopo circa STT + primo token LLM + TTS della prima frase).
 1. `sudo raspi-config` → abilita **I2C** (e la camera se montata).
 2. `python servo_tester.py` → trova min/neutro/max PWM di ogni canale; **mai forzare un servo oltre il fine corsa meccanico**.
 3. Inserisci i valori calibrati in `data/settings.json` sotto `"pwm"`.
@@ -168,7 +171,10 @@ l'asse "avanti" della tua build spingendo TARS una volta e guardando il segno).
 parallelo sullo stesso bus I2C, indirizzo 0x68): se presente viene rilevato
 automaticamente e ogni candidata che lascia TARS non in piedi riceve una
 penalità fissa al posto del punteggio camera — cadere non conviene mai
-(`--no-imu` per disattivare). Una singola cattura o misura fallita salta
+(`--no-imu` per disattivare). Il giroscopio viene anche campionato mentre
+ogni candidata cammina: la velocità angolare media per `--wobble-weight`
+(default 0,01) viene sottratta come **tassa di stabilità**, così tra due
+andature che coprono la stessa distanza vince la più fluida. Una singola cattura o misura fallita salta
 quella candidata invece di uccidere la sessione, e ogni valutazione viene
 registrata in `data/gait_training.json`: la dashboard disegna la **curva di
 apprendimento live** (grigio = reward per candidata, accento = miglior
@@ -190,7 +196,10 @@ chromium-browser --kiosk --noerrdialogs http://localhost:8000/display
 ```
 
 Sfondo nero, monospace ciano, barre umorismo/onestà, batteria e temperatura,
-scanline CRT, cursore lampeggiante. Il nome pulsa mentre TARS ascolta.
+scanline CRT, cursore lampeggiante — più una waveform animata legata allo
+stato vocale: barre vivaci mentre parla, pulsazione sincronizzata in ascolto,
+"inseguimento" mentre pensa e respiro lento a riposo. Il nome pulsa mentre
+TARS ascolta.
 Localhost è esente dalla password della dashboard, quindi il kiosk funziona
 anche con `TARS_WEB_PASSWORD` impostata.
 

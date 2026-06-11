@@ -69,6 +69,9 @@ def main():
     parser.add_argument("--no-imu", action="store_true",
                         help="skip the automatic fall penalty even if an "
                              "MPU-6050 is present")
+    parser.add_argument("--wobble-weight", type=float, default=0.01,
+                        help="stability tax: reward minus WEIGHT x mean gyro "
+                             "rate in deg/s (default 0.01, 0 disables)")
     parser.add_argument("--calibrate-camera", action="store_true",
                         help="one-time px-per-cm calibration: slide TARS a "
                              "known distance, the camera reward then scores "
@@ -100,8 +103,11 @@ def main():
         from .rewards import FallGuard
         imu = get_imu()
         if imu.available:
-            reward_fn = FallGuard(reward_fn, imu)
-            print("MPU-6050 detected: automatic fall penalty active.")
+            reward_fn = FallGuard(reward_fn, imu,
+                                  wobble_weight=max(0.0, args.wobble_weight))
+            print("MPU-6050 detected: automatic fall penalty active"
+                  + (f", stability tax x{args.wobble_weight}."
+                     if args.wobble_weight > 0 else "."))
 
     from .training_log import TrainingLog
     train_log = TrainingLog(args.reward)

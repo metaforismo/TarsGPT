@@ -574,6 +574,47 @@ def test_conversation_survives_restart():
     assert Memory(settings).turns == []
 
 
+def test_fall_guard_stability_tax():
+    import time as _time
+    from tars.learn import FallGuard
+    class WobblyImu:
+        def is_upright(self):
+            return True
+        def read_gyro(self):
+            return (30.0, 40.0, 0.0)            # magnitude 50 deg/s
+    def slow_inner(params):
+        _time.sleep(0.12)                       # let the sampler collect
+        return 10.0
+    guard = FallGuard(slow_inner, WobblyImu(), wobble_weight=0.01,
+                      print_fn=lambda *_: None)
+    taxed = guard({})
+    assert abs(taxed - 9.5) < 1e-9, taxed       # 10 - 0.01 * 50
+    # weight 0 disables sampling entirely
+    assert FallGuard(slow_inner, WobblyImu(), wobble_weight=0.0,
+                     print_fn=lambda *_: None)({}) == 10.0
+    # a fall still wins over any wobble math
+    class FallenImu(WobblyImu):
+        def is_upright(self):
+            return False
+    assert FallGuard(slow_inner, FallenImu(), wobble_weight=0.01,
+                     print_fn=lambda *_: None)({}) == -5.0
+
+
+def test_benchmark_skips_gracefully():
+    from tars.benchmark import run_benchmark, OK, SKIP
+    results = run_benchmark(settings)
+    assert [r.name for r in results] == ["LLM reply", "TTS synthesis",
+                                         "STT transcription"]
+    assert all(r.status in (OK, SKIP) and r.detail for r in results)
+    if not (settings.openai_api_key or settings.llm_base_url):
+        assert results[0].status == SKIP        # unconfigured = skip, not crash
+
+
+def test_display_waveform_markup():
+    page = open("tars/web/static/display.html").read()
+    assert 'id="wave"' in page and "voiceState" in page
+
+
 def test_measured_reward_flow():
     """MeasuredReward must drive the robot and parse the operator's input."""
     from tars.learn import MeasuredReward

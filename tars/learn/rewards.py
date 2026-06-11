@@ -4,9 +4,13 @@ MeasuredReward is the verifiable one: the robot physically walks and the
 reward is the distance it actually covered (tape measure on the floor, or
 marks on tiles). SimReward is a deterministic surrogate with a known
 optimum, used to test and demo the optimization machinery off-robot.
+FallGuard wraps any of them with IMU supervision: falls become penalties
+and wobbly gaits pay a stability tax.
 """
 import math
 import random
+import threading
+import time
 
 
 class SimReward:
@@ -37,21 +41,57 @@ class SimReward:
 
 
 class FallGuard:
-    """Wrap any reward with an IMU check: if TARS is not upright after the
-    candidate's steps, the reward becomes a fixed penalty - falling must
-    never look profitable, whatever the camera or surrogate said."""
+    """Wrap any reward with IMU supervision.
 
-    def __init__(self, inner, imu, penalty: float = -5.0, print_fn=print):
+    - Fall penalty: if TARS is not upright after the candidate's steps the
+      reward becomes a fixed penalty - falling must never look profitable,
+      whatever the camera or surrogate said.
+    - Stability tax (optional, wobble_weight > 0): the gyro is sampled in a
+      background thread while the candidate walks; the mean angular rate
+      (deg/s) times the weight is subtracted, so between two gaits covering
+      the same distance the smoother one wins.
+    """
+
+    SAMPLE_INTERVAL = 0.03  # seconds between gyro reads while walking
+
+    def __init__(self, inner, imu, penalty: float = -5.0,
+                 wobble_weight: float = 0.0, print_fn=print):
         self.inner = inner
         self.imu = imu
         self.penalty = penalty
+        self.wobble_weight = wobble_weight
         self.print_fn = print_fn
 
+    def _sample_gyro(self, samples: list, stop: threading.Event):
+        while not stop.is_set():
+            rates = self.imu.read_gyro()
+            if rates is not None:
+                samples.append(math.hypot(*rates))
+            time.sleep(self.SAMPLE_INTERVAL)
+
     def __call__(self, params: dict) -> float:
-        reward = self.inner(params)
+        samples: list[float] = []
+        stop = threading.Event()
+        sampler = None
+        if self.wobble_weight > 0 and self.imu.read_gyro() is not None:
+            sampler = threading.Thread(target=self._sample_gyro,
+                                       args=(samples, stop), daemon=True)
+            sampler.start()
+        try:
+            reward = self.inner(params)
+        finally:
+            stop.set()
+            if sampler is not None:
+                sampler.join(timeout=1)
         if self.imu.is_upright() is False:
             self.print_fn("  IMU: fall detected -> penalty applied")
             return self.penalty
+        if samples:
+            wobble = sum(samples) / len(samples)
+            tax = self.wobble_weight * wobble
+            self.print_fn(f"  IMU: mean wobble {wobble:.0f} deg/s "
+                          f"-> stability tax {tax:.2f}")
+            reward -= tax
         return reward
 
 

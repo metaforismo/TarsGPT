@@ -2,6 +2,17 @@
 
 All notable changes to TarsGPT. Dates are merge dates.
 
+## 1.5.0 — 2026-06
+
+- **Stability tax**: during training the gyro is sampled while each
+  candidate walks; mean angular rate x `--wobble-weight` (default 0.01) is
+  subtracted, so equally-fast but smoother gaits win
+- **`tars --benchmark`**: times LLM (first token + full reply), TTS
+  synthesis and STT on the configured engines; unconfigured stages skip
+- **Onboard display waveform**: animated bars tied to the voice state
+  (speaking / listening / thinking / idle)
+- Suite grown to 45 tests
+
 ## 1.4.0 — 2026-06
 
 - **`tars --doctor`**: 12-point self-test (I2C, PCA9685, IMU, camera, mic,
