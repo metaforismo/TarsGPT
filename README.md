@@ -47,6 +47,8 @@ python -m tars.app --sim    # try it now, robot optional
 
 ## 📚 Documentation
 
+Reading-order index: [docs/README.md](docs/README.md)
+
 | English | Italiano |
 |---|---|
 | [Software architecture & manual](docs/en/SOFTWARE.md) | [Architettura software e manuale](docs/it/SOFTWARE.md) |

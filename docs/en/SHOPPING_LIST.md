@@ -38,6 +38,8 @@
 | 14 | **20 AWG 2-conductor parallel wire** | ~2 m | Power distribution |
 
 > 💪 **Upgrade option:** the TARS-WIZARD build uses 3× **LewanSoul LD-3015MG** (17 kg·cm) high-torque servos instead of MG996R — stronger and smoother walking, slightly more expensive.
+>
+> 🧭 **Optional sensor:** an **MPU-6050 IMU** (~€3, I2C) detects orientation/falls — useful for supervising gait-training sessions (software roadmap).
 
 ## 3. Display, audio & vision
 

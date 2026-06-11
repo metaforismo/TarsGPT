@@ -7,6 +7,7 @@ with different friction.
 """
 import json
 import logging
+import math
 import threading
 import time
 from .driver import ServoDriver
@@ -63,12 +64,26 @@ class Gaits:
 
     # ---------- primitives ----------
 
+    @staticmethod
+    def _eased_delay(base: float, i: int, steps: int) -> float:
+        """Sinusoidal ease-in-out: the servo starts gently, peaks mid-travel
+        and brakes before the stop - smoother on joints and gearboxes than a
+        constant-velocity ramp. Endpoint dwell is capped at 4x the base
+        delay so total travel time stays comparable."""
+        if steps <= 1:
+            return base
+        velocity = math.sin(math.pi * i / steps)
+        return base / max(0.25, velocity)
+
     def _sweep(self, channel: int, start: int, end: int, delay: float):
-        step = 1 if end > start else -1
-        for v in range(start, end, step):
-            self.d.set_pwm(channel, v)
-            time.sleep(delay)
-        self.d.set_pwm(channel, end)
+        steps = abs(end - start)
+        if steps == 0:
+            self.d.set_pwm(channel, end)
+            return
+        direction = 1 if end > start else -1
+        for i in range(1, steps + 1):
+            self.d.set_pwm(channel, start + direction * i)
+            time.sleep(self._eased_delay(delay, i, steps))
 
     def _sweep_pair(self, ch_a, start_a, end_a, ch_b, start_b, end_b, delay):
         """Sweep two channels in lockstep. Ranges may be asymmetric: both
@@ -80,7 +95,7 @@ class Gaits:
         for i in range(1, steps + 1):
             self.d.set_pwm(ch_a, start_a + round((end_a - start_a) * i / steps))
             self.d.set_pwm(ch_b, start_b + round((end_b - start_b) * i / steps))
-            time.sleep(delay)
+            time.sleep(self._eased_delay(delay, i, steps))
 
     # ---------- torso ----------
 

@@ -138,9 +138,23 @@ saves the best gait to `data/gait_params.json`, loaded automatically at every
 start. Budget ~10 minutes and ~2 m of free floor for a session; you can stop
 and resume — training always starts from the current best.
 
+**Hands-free variant** — let the camera be the judge:
+
+```bash
+python -m tars.learn --reward camera --iterations 12 --steps 3
+```
+
+A frame is grabbed before and after each candidate's steps; phase correlation
+between the two recovers the camera translation in pixels — proportional to
+the ground covered when the camera watches a textured static scene (pointing
+it at the floor works best). Pixels are a relative unit, which is all the
+optimizer needs. Supervise the first sessions: a fall produces a garbage
+frame, and the tape measure (`--reward measured`) remains the ground truth.
+
 `--reward sim` runs the same machinery against a deterministic surrogate
 landscape (used by the test suite to verify the optimizer actually converges)
-— useful to dry-run the whole loop off-robot with `--sim`.
+— useful to dry-run the whole loop off-robot with `--sim`. **Ctrl-C is safe
+in every mode**: training stops and keeps the best gait found so far.
 
 ## The onboard screen
 

@@ -9,7 +9,9 @@ import tempfile
 from . import skill
 
 
-def _capture() -> str | None:
+def capture() -> str | None:
+    """Grab one camera frame to a jpg; tries Pi camera tools then OpenCV.
+    Shared with the gait optimizer's camera reward."""
     path = tempfile.mktemp(suffix=".jpg", prefix="tars_eye_")
     for tool, args in (("rpicam-still", ["-n", "--immediate", "-o"]),
                        ("libcamera-still", ["-n", "--immediate", "-o"]),
@@ -39,7 +41,7 @@ def _capture() -> str | None:
 def look(ctx, question=""):
     if not ctx.settings.openai_api_key:
         return "error: vision requires an OpenAI API key"
-    path = _capture()
+    path = capture()
     if path is None:
         return "error: no camera available"
     with open(path, "rb") as f:

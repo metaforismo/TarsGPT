@@ -13,3 +13,6 @@ vosk>=0.3.45
 # Adafruit-PCA9685            # legacy driver, or:
 # adafruit-circuitpython-pca9685
 # evdev                       # gamepad support
+
+# Optional: camera reward for gait training (python -m tars.learn --reward camera)
+# opencv-python-headless

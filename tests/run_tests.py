@@ -338,6 +338,76 @@ def test_gait_optimizer_converges():
     assert again.best_reward == result.best_reward
 
 
+def test_camera_shift_estimation():
+    """Phase correlation must recover a known synthetic translation."""
+    try:
+        import cv2  # noqa: F401
+        import numpy as np
+    except ImportError:
+        print("  (opencv missing, skipped)")
+        return
+    from tars.learn import estimate_shift
+    rng = np.random.default_rng(0)
+    scene = (rng.random((240, 320)) * 255).astype(np.uint8)
+    shifted = np.roll(scene, shift=(7, 12), axis=(0, 1))   # dy=7, dx=12
+    dx, dy = estimate_shift(scene, shifted)
+    assert abs(abs(dx) - 12) < 1.0 and abs(abs(dy) - 7) < 1.0, (dx, dy)
+
+
+def test_camera_reward_flow():
+    try:
+        import numpy as np
+    except ImportError:
+        print("  (numpy missing, skipped)")
+        return
+    try:
+        import cv2  # noqa: F401
+    except ImportError:
+        print("  (opencv missing, skipped)")
+        return
+    from tars.learn import CameraReward
+    gaits = Gaits(ServoDriver(60, sim=True), settings)
+    rng = np.random.default_rng(1)
+    scene = (rng.random((120, 160)) * 255).astype(np.uint8)
+    frames = iter([scene, np.roll(scene, 9, axis=1)])      # 9 px of travel
+    reward = CameraReward(gaits, steps=3, capture_fn=lambda: next(frames),
+                          print_fn=lambda *_: None)
+    value = reward(dict(gaits.gp))
+    assert 2.5 < value < 3.5, value                        # ~9 px / 3 steps
+
+
+def test_eased_sweep_lands_exactly():
+    gaits = Gaits(ServoDriver(60, sim=True), settings)
+    seen = {}
+    gaits.d.set_pwm = lambda ch, v: seen.__setitem__(ch, v)
+    gaits._sweep(0, 300, 340, 0)
+    assert seen[0] == 340
+    gaits._sweep(0, 340, 300, 0)
+    assert seen[0] == 300
+    gaits._sweep(0, 300, 300, 0)                           # zero-length
+    assert seen[0] == 300
+    # easing: gentle at the ends, fast mid-travel, dwell capped at 4x
+    delays = [Gaits._eased_delay(1.0, i, 100) for i in range(1, 101)]
+    assert delays[0] > delays[50] and delays[-1] > delays[50]
+    assert max(delays) <= 4.0 and min(delays) >= 1.0
+
+
+def test_optimizer_keyboard_interrupt():
+    """Ctrl-C during a hardware session must keep the best gait found."""
+    from tars.learn import GaitOptimizer, SimReward, SEARCH_SPACE
+    sim = SimReward(noise=0.0)
+    calls = {"n": 0}
+    def reward(params):
+        calls["n"] += 1
+        if calls["n"] >= 5:
+            raise KeyboardInterrupt
+        return sim(params)
+    result = GaitOptimizer(reward, seed=1).optimize(
+        start={spec.name: spec.lo for spec in SEARCH_SPACE}, iterations=50)
+    assert len(result.history) == 4                        # baseline + 3 done
+    assert result.best_reward == max(r for _, r in result.history)
+
+
 def test_measured_reward_flow():
     """MeasuredReward must drive the robot and parse the operator's input."""
     from tars.learn import MeasuredReward

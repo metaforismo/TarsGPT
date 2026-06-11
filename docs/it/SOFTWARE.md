@@ -139,9 +139,25 @@ l'andatura migliore in `data/gait_params.json`, caricata automaticamente a
 ogni avvio. Servono ~10 minuti e ~2 m di pavimento libero; puoi interrompere
 e riprendere — l'allenamento riparte sempre dal miglior risultato corrente.
 
+**Variante a mani libere** — lascia giudicare la camera:
+
+```bash
+python -m tars.learn --reward camera --iterations 12 --steps 3
+```
+
+Un frame viene catturato prima e dopo i passi di ogni candidata; la
+correlazione di fase tra i due recupera la traslazione della camera in pixel —
+proporzionale al terreno percorso quando la camera guarda una scena statica
+con texture (puntarla verso il pavimento funziona meglio). I pixel sono
+un'unità relativa, che è tutto ciò che serve all'ottimizzatore. Supervisiona
+le prime sessioni: una caduta produce un frame spazzatura, e il metro
+(`--reward measured`) resta la verità di riferimento.
+
 `--reward sim` esegue la stessa macchina su una superficie surrogata
 deterministica (usata dalla suite di test per verificare che l'ottimizzatore
 converga davvero) — utile per provare l'intero loop a vuoto con `--sim`.
+**Ctrl-C è sicuro in ogni modalità**: l'allenamento si ferma conservando la
+miglior andatura trovata fin lì.
 
 ## Lo schermo di bordo
 

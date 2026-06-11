@@ -38,6 +38,8 @@
 | 14 | **Cavo parallelo 2 conduttori 20 AWG** | ~2 m | Distribuzione alimentazione |
 
 > 💪 **Upgrade:** la build TARS-WIZARD usa 3× **LewanSoul LD-3015MG** (17 kg·cm) ad alta coppia al posto degli MG996R — camminata più forte e fluida, costo leggermente superiore.
+>
+> 🧭 **Sensore opzionale:** un **IMU MPU-6050** (~3 €, I2C) rileva orientamento/cadute — utile per supervisionare le sessioni di allenamento dell'andatura (roadmap software).
 
 ## 3. Display, audio e visione
 

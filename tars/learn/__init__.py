@@ -7,6 +7,7 @@ surrogate for testing the machinery).
 """
 from .optimizer import GaitOptimizer, SEARCH_SPACE, OptResult
 from .rewards import SimReward, MeasuredReward
+from .vision_reward import CameraReward, estimate_shift
 
 __all__ = ["GaitOptimizer", "SEARCH_SPACE", "OptResult",
-           "SimReward", "MeasuredReward"]
+           "SimReward", "MeasuredReward", "CameraReward", "estimate_shift"]

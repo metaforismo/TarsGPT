@@ -2,6 +2,21 @@
 
 All notable changes to TarsGPT. Dates are merge dates.
 
+## 1.2.0 — 2026-06
+
+- **Camera reward** for gait training (`--reward camera`): frames before and
+  after each candidate's steps are compared with phase correlation; the
+  recovered translation in pixels becomes the reward — no tape measure needed
+- **Sinusoidal easing** on all servo sweeps: gentle start, fast mid-travel,
+  braking before the stop (capped at 4x dwell) — smoother and kinder to
+  gearboxes, endpoints still land exactly
+- **Ctrl-C-safe training**: interrupting a hardware session keeps and can
+  save the best gait found so far
+- `docs/README.md`: bilingual reading-order index of all documentation;
+  MPU-6050 IMU added to the shopping list as optional sensor
+- Suite grown to 33 tests (synthetic-shift recovery, camera-reward flow,
+  easing endpoint exactness and bounds, interrupt handling)
+
 ## 1.1.0 — 2026-06
 
 - **Gait learning** (`tars/learn/`): (1+1) evolution strategy over the five

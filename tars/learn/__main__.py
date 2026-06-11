@@ -17,7 +17,8 @@ from .rewards import MeasuredReward, SimReward
 
 def main():
     parser = argparse.ArgumentParser(description="TARS gait optimizer")
-    parser.add_argument("--reward", choices=["measured", "sim"], default="measured")
+    parser.add_argument("--reward", choices=["measured", "camera", "sim"],
+                        default="measured")
     parser.add_argument("--iterations", type=int, default=12,
                         help="candidate gaits to try (default 12)")
     parser.add_argument("--steps", type=int, default=3,
@@ -36,6 +37,12 @@ def main():
         reward_fn = MeasuredReward(gaits, steps=args.steps)
         print(f"Gait training: {args.iterations} candidates x {args.steps} steps.")
         print("You need ~2 m of free floor and a tape measure (or floor tiles).")
+    elif args.reward == "camera":
+        from .vision_reward import CameraReward
+        reward_fn = CameraReward(gaits, steps=args.steps)
+        print(f"Camera-rewarded training: {args.iterations} candidates x "
+              f"{args.steps} steps. Keep the scene static; Ctrl-C saves the "
+              "best gait found so far.")
     else:
         reward_fn = SimReward(noise=0.3, seed=args.seed)
 
@@ -47,7 +54,7 @@ def main():
     for key, value in result.best_params.items():
         print(f"  {key:18s} = {value:.3e}")
 
-    if args.reward == "measured" or args.save:
+    if args.reward in ("measured", "camera") or args.save:
         gaits.apply_gait_params(result.best_params)
         gaits.save_gait_params()
         print("Saved to data/gait_params.json - active from the next start.")

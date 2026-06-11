@@ -69,7 +69,12 @@ class GaitOptimizer:
 
         for i in range(iterations):
             candidate = self._mutate(best)
-            reward = self.reward_fn(candidate)
+            try:
+                reward = self.reward_fn(candidate)
+            except KeyboardInterrupt:
+                # hardware sessions get interrupted; keep the best found so far
+                log.info("interrupted at iteration %d - keeping best so far", i + 1)
+                break
             history.append((dict(candidate), reward))
             if reward > best_reward:
                 best, best_reward = candidate, reward
