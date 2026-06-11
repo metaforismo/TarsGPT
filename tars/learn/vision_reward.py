@@ -8,9 +8,29 @@ textured static scene (point it at the floor for best results).
 The reward is in pixels - a relative unit, which is all an optimizer needs
 (more pixels = more distance, on the same floor with the same camera).
 """
+import json
 import logging
+from ..config import DATA_DIR
 
 log = logging.getLogger("tars.learn.camera")
+
+CAMERA_SCALE_FILE = DATA_DIR / "camera_scale.json"
+
+
+def load_camera_scale() -> float | None:
+    """px-per-cm calibration factor saved by `tars.learn --calibrate-camera`."""
+    if not CAMERA_SCALE_FILE.exists():
+        return None
+    try:
+        scale = float(json.loads(CAMERA_SCALE_FILE.read_text())["px_per_cm"])
+        return scale if scale > 0 else None
+    except (json.JSONDecodeError, OSError, KeyError, ValueError):
+        return None
+
+
+def save_camera_scale(px_per_cm: float):
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    CAMERA_SCALE_FILE.write_text(json.dumps({"px_per_cm": px_per_cm}))
 
 
 def estimate_shift(image_a, image_b) -> tuple[float, float]:
@@ -67,6 +87,7 @@ class CameraReward:
         self.capture_fn = capture_fn
         self.print_fn = print_fn
         self.axis = axis
+        self.px_per_cm = load_camera_scale()  # None -> reward stays in pixels
 
     def __call__(self, params: dict) -> float:
         import math
@@ -90,7 +111,11 @@ class CameraReward:
         finally:
             if isinstance(before, str) and os.path.exists(before):
                 os.unlink(before)
-        distance_px = {"mag": math.hypot(dx, dy), "x": dx, "-x": -dx,
-                       "y": dy, "-y": -dy}[self.axis]
-        self.print_fn(f"  camera shift: {distance_px:.1f} px (axis={self.axis})")
-        return distance_px / self.steps
+        distance = {"mag": math.hypot(dx, dy), "x": dx, "-x": -dx,
+                    "y": dy, "-y": -dy}[self.axis]
+        unit = "px"
+        if self.px_per_cm:
+            distance /= self.px_per_cm
+            unit = "cm"
+        self.print_fn(f"  camera shift: {distance:.1f} {unit} (axis={self.axis})")
+        return distance / self.steps

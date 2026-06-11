@@ -79,6 +79,9 @@ Dashboard: `http://<pi-address>:8000`
 
 ### First-run checklist
 
+0. `python -m tars.app --doctor` — the self-test checks every subsystem
+   (I2C, PCA9685, IMU, camera, mic, audio, TTS/STT/LLM, ffmpeg, disk) and
+   tells you what to fix. Run it again after every wiring change.
 1. `sudo raspi-config` → enable **I2C** (and the camera if installed).
 2. `python servo_tester.py` → find min/neutral/max PWM for every channel; **never force a servo past a mechanical stop**.
 3. Put your calibrated values in `data/settings.json` under `"pwm"`.
@@ -143,6 +146,12 @@ and resume — training always starts from the current best.
 
 ```bash
 python -m tars.learn --reward camera --iterations 12 --steps 3
+```
+
+Calibrate once and the camera reward speaks **real centimeters**:
+
+```bash
+python -m tars.learn --calibrate-camera   # slide TARS 10-20 cm when asked
 ```
 
 A frame is grabbed before and after each candidate's steps; phase correlation
@@ -219,7 +228,7 @@ Restart. That's it — no registration files, no dispatch chain to edit. The LLM
 
 ## Configuration reference
 
-All via `.env` (see `.env.example`): `OPENAI_API_KEY`, `TARS_LLM_BASE_URL`, `TARS_MODEL`, `TARS_EMBEDDING_MODEL`, `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `TARS_PIPER_VOICE`, `TARS_LANGUAGE`, `TARS_WAKE_WORD`, `TARS_TTS`, `TARS_STT`, `TARS_SIM`, `TARS_GAMEPAD`, `TARS_WEB_PORT`, `TARS_WEB_PASSWORD`, `HA_URL`, `HA_TOKEN`, `TARS_MUSIC_DIR`. Personality and PWM calibration persist in `data/settings.json`; long-term memory (with embeddings) in `data/memory.json`.
+All via `.env` (see `.env.example`): `OPENAI_API_KEY`, `TARS_LLM_BASE_URL`, `TARS_MODEL`, `TARS_EMBEDDING_MODEL`, `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `TARS_PIPER_VOICE`, `TARS_LANGUAGE`, `TARS_WAKE_WORD`, `TARS_ACK` (the "Yes?" spoken after the wake word: auto/off/custom), `TARS_FOLLOWUP_WINDOW`, `TARS_TTS`, `TARS_STT`, `TARS_SIM`, `TARS_GAMEPAD`, `TARS_WEB_PORT`, `TARS_WEB_PASSWORD`, `HA_URL`, `HA_TOKEN`, `TARS_MUSIC_DIR`. Personality and PWM calibration persist in `data/settings.json`; long-term memory (with embeddings) in `data/memory.json`.
 
 ## Autostart on boot
 
@@ -234,6 +243,7 @@ journalctl -u tars -f                               # live logs
 
 | Symptom | Fix |
 |---|---|
+| Anything at all | Start with `python -m tars.app --doctor` — it pinpoints the failing subsystem |
 | Servos jitter or twitch | Power problem 9 times out of 10: buck converter not at **6.2 V**, undersized battery, or missing **common ground** between PCA9685 V+ rail and the Pi |
 | `No PCA9685 found` on the robot | Enable I2C (`sudo raspi-config`), then `i2cdetect -y 1` should show `0x40`; check SDA/SCL wiring |
 | Microphone not picked up | `arecord -l` to list devices; set the USB card as default in `~/.asoundrc` |

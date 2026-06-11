@@ -2,6 +2,19 @@
 
 All notable changes to TarsGPT. Dates are merge dates.
 
+## 1.4.0 — 2026-06
+
+- **`tars --doctor`**: 12-point self-test (I2C, PCA9685, IMU, camera, mic,
+  audio out, TTS/STT/LLM, ffmpeg, disk) with fix hints per failure -
+  the first thing to run after wiring
+- **Camera calibration** (`--calibrate-camera`): one manual slide measures
+  px-per-cm; camera rewards then score in real centimeters
+- **Wake acknowledgment**: TARS answers the wake word ("Yes?" / "Sì?", per
+  language, `TARS_ACK` to customize or disable) before opening the mic
+- **Conversation persistence**: the short-term dialog now survives restarts
+- IMU driver gains `read_gyro()` (deg/s, wobble inspection)
+- Suite grown to 42 tests
+
 ## 1.3.0 — 2026-06
 
 - **MPU-6050 IMU support** (`tars/sensors.py`): orientation and fall

@@ -493,6 +493,87 @@ def test_training_log_and_endpoint():
     TRAINING_LOG_FILE.unlink()
 
 
+def test_gyro_graceful_and_doctor():
+    from tars.sensors import Imu
+    assert Imu().read_gyro() is None          # no hardware here
+    from tars.doctor import run_checks, OK, WARN, FAIL
+    checks = run_checks(settings)
+    names = {c.name for c in checks}
+    assert {"Python", "PCA9685 servo driver", "LLM brain",
+            "Microphone", "Disk space"} <= names
+    assert all(c.status in (OK, WARN, FAIL) and c.detail for c in checks)
+    assert next(c for c in checks if c.name == "Python").status == OK
+
+
+def test_camera_scale_calibration():
+    try:
+        import cv2  # noqa: F401
+        import numpy as np
+    except ImportError:
+        print("  (opencv missing, skipped)")
+        return
+    from tars.learn import CameraReward
+    from tars.learn.vision_reward import (save_camera_scale, load_camera_scale,
+                                          CAMERA_SCALE_FILE)
+    from tars.learn.__main__ import calibrate_camera
+    import tempfile
+    rng = np.random.default_rng(3)
+    scene = (rng.random((120, 160)) * 255).astype(np.uint8)
+
+    def frame_writer(images):
+        frames = iter(images)
+        def capture():
+            path = tempfile.mktemp(suffix=".png", prefix="tars_cal_")
+            cv2.imwrite(path, next(frames))
+            return path
+        return capture
+
+    # calibration flow: 10 px of shift declared as 5 cm -> 2 px/cm
+    answers = iter(["", "5"])
+    code = calibrate_camera(input_fn=lambda _: next(answers),
+                            print_fn=lambda *_: None,
+                            capture_fn=frame_writer([scene, np.roll(scene, 10, axis=1)]))
+    assert code == 0 and abs(load_camera_scale() - 2.0) < 0.2
+    # the reward now speaks centimeters: 10 px / 2 px/cm / 2 steps = 2.5
+    gaits = Gaits(ServoDriver(60, sim=True), settings)
+    frames = iter([scene, np.roll(scene, 10, axis=1)])
+    reward = CameraReward(gaits, steps=2, capture_fn=lambda: next(frames),
+                          print_fn=lambda *_: None)
+    assert abs(reward(dict(gaits.gp)) - 2.5) < 0.3
+    CAMERA_SCALE_FILE.unlink()
+    save_camera_scale(-1)                      # invalid scale is rejected
+    assert load_camera_scale() is None
+    CAMERA_SCALE_FILE.unlink()
+
+
+def test_wake_ack_resolution():
+    from tars.voice import resolve_ack
+    old_ack, old_lang = settings.ack, settings.language
+    try:
+        settings.ack, settings.language = "auto", "it"
+        assert resolve_ack(settings) == "Sì?"
+        settings.language = "xx"               # unknown language falls back
+        assert resolve_ack(settings) == "Yes?"
+        settings.ack = "off"
+        assert resolve_ack(settings) is None
+        settings.ack = "At your service."
+        assert resolve_ack(settings) == "At your service."
+    finally:
+        settings.ack, settings.language = old_ack, old_lang
+
+
+def test_conversation_survives_restart():
+    mem = Memory(settings)
+    mem.clear()
+    mem.add_turn("user", "remember this across reboots")
+    mem.add_turn("assistant", "noted")
+    reborn = Memory(settings)
+    assert [t["content"] for t in reborn.turns[-2:]] == \
+        ["remember this across reboots", "noted"]
+    reborn.clear()
+    assert Memory(settings).turns == []
+
+
 def test_measured_reward_flow():
     """MeasuredReward must drive the robot and parse the operator's input."""
     from tars.learn import MeasuredReward

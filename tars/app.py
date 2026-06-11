@@ -48,8 +48,14 @@ def main():
     parser.add_argument("--no-voice", action="store_true", help="disable the voice loop")
     parser.add_argument("--no-web", action="store_true", help="disable the web dashboard")
     parser.add_argument("--no-gamepad", action="store_true", help="disable gamepad control")
+    parser.add_argument("--doctor", action="store_true",
+                        help="run the hardware/software self-test and exit")
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
+
+    if args.doctor:
+        from .doctor import print_report
+        raise SystemExit(print_report(settings))
 
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO,
                         format="%(asctime)s %(name)s %(levelname)s %(message)s")

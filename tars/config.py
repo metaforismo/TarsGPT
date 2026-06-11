@@ -34,6 +34,9 @@ class Settings:
     # after TARS answers, keep listening this many seconds for a follow-up
     # question without requiring the wake word again (0 disables)
     followup_window: float = float(os.environ.get("TARS_FOLLOWUP_WINDOW", "6"))
+    # spoken acknowledgment right after the wake word: "auto" picks one for
+    # the configured language, "off" disables, anything else is said verbatim
+    ack: str = os.environ.get("TARS_ACK", "auto")
     # --- Personality (adjustable at runtime, persisted) ---
     humor: int = 75
     honesty: int = 90

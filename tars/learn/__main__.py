@@ -15,6 +15,41 @@ from .optimizer import GaitOptimizer
 from .rewards import MeasuredReward, SimReward
 
 
+def calibrate_camera(input_fn=input, print_fn=print, capture_fn=None):
+    """Measure the camera's px-per-cm factor with one manual slide."""
+    from .vision_reward import estimate_shift, save_camera_scale
+    import math
+    if capture_fn is None:
+        from ..skills.vision import capture as capture_fn
+    print_fn("Camera calibration: TARS will take a frame, then you slide it "
+             "forward by a known distance and it takes another.")
+    before = capture_fn()
+    if before is None:
+        print_fn("error: no camera frame captured")
+        return 1
+    input_fn("Slide TARS forward 10-20 cm (do not rotate it), then press Enter... ")
+    after = capture_fn()
+    if after is None:
+        print_fn("error: no camera frame captured")
+        return 1
+    dx, dy = estimate_shift(before, after)
+    pixels = math.hypot(dx, dy)
+    while True:
+        raw = input_fn("How many cm did you slide it? ").strip()
+        try:
+            cm = float(raw.replace(",", "."))
+            break
+        except ValueError:
+            print_fn("Please enter a number, e.g. 15")
+    if pixels < 1.0 or cm <= 0:
+        print_fn(f"error: shift too small to calibrate ({pixels:.1f} px / {cm} cm)")
+        return 1
+    save_camera_scale(pixels / cm)
+    print_fn(f"Saved: {pixels / cm:.2f} px/cm "
+             f"- camera rewards are now in centimeters.")
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(description="TARS gait optimizer")
     parser.add_argument("--reward", choices=["measured", "camera", "sim"],
@@ -34,7 +69,14 @@ def main():
     parser.add_argument("--no-imu", action="store_true",
                         help="skip the automatic fall penalty even if an "
                              "MPU-6050 is present")
+    parser.add_argument("--calibrate-camera", action="store_true",
+                        help="one-time px-per-cm calibration: slide TARS a "
+                             "known distance, the camera reward then scores "
+                             "in real centimeters")
     args = parser.parse_args()
+
+    if args.calibrate_camera:
+        return calibrate_camera()
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     gaits = Gaits(ServoDriver(settings.pwm_frequency,

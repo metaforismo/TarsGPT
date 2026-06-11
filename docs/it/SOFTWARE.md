@@ -79,6 +79,9 @@ Dashboard: `http://<indirizzo-pi>:8000`
 
 ### Checklist primo avvio
 
+0. `python -m tars.app --doctor` — l'autotest controlla ogni sottosistema
+   (I2C, PCA9685, IMU, camera, microfono, audio, TTS/STT/LLM, ffmpeg, disco)
+   e ti dice cosa sistemare. Rilancialo dopo ogni modifica al cablaggio.
 1. `sudo raspi-config` → abilita **I2C** (e la camera se montata).
 2. `python servo_tester.py` → trova min/neutro/max PWM di ogni canale; **mai forzare un servo oltre il fine corsa meccanico**.
 3. Inserisci i valori calibrati in `data/settings.json` sotto `"pwm"`.
@@ -144,6 +147,12 @@ e riprendere — l'allenamento riparte sempre dal miglior risultato corrente.
 
 ```bash
 python -m tars.learn --reward camera --iterations 12 --steps 3
+```
+
+Calibra una volta e la reward camera parla in **centimetri veri**:
+
+```bash
+python -m tars.learn --calibrate-camera   # fai scorrere TARS di 10-20 cm quando richiesto
 ```
 
 Un frame viene catturato prima e dopo i passi di ogni candidata; la
@@ -222,7 +231,7 @@ Riavvia. Fine — niente file di registrazione, niente catene di dispatch da mod
 
 ## Riferimento configurazione
 
-Tutto via `.env` (vedi `.env.example`): `OPENAI_API_KEY`, `TARS_LLM_BASE_URL`, `TARS_MODEL`, `TARS_EMBEDDING_MODEL`, `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `TARS_PIPER_VOICE`, `TARS_LANGUAGE`, `TARS_WAKE_WORD`, `TARS_TTS`, `TARS_STT`, `TARS_SIM`, `TARS_GAMEPAD`, `TARS_WEB_PORT`, `TARS_WEB_PASSWORD`, `HA_URL`, `HA_TOKEN`, `TARS_MUSIC_DIR`. Personalità e calibrazione PWM persistono in `data/settings.json`; la memoria a lungo termine (con embedding) in `data/memory.json`.
+Tutto via `.env` (vedi `.env.example`): `OPENAI_API_KEY`, `TARS_LLM_BASE_URL`, `TARS_MODEL`, `TARS_EMBEDDING_MODEL`, `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `TARS_PIPER_VOICE`, `TARS_LANGUAGE`, `TARS_WAKE_WORD`, `TARS_ACK` (il "Sì?" pronunciato dopo la wake word: auto/off/testo), `TARS_FOLLOWUP_WINDOW`, `TARS_TTS`, `TARS_STT`, `TARS_SIM`, `TARS_GAMEPAD`, `TARS_WEB_PORT`, `TARS_WEB_PASSWORD`, `HA_URL`, `HA_TOKEN`, `TARS_MUSIC_DIR`. Personalità e calibrazione PWM persistono in `data/settings.json`; la memoria a lungo termine (con embedding) in `data/memory.json`.
 
 ## Avvio automatico al boot
 
@@ -237,6 +246,7 @@ journalctl -u tars -f                               # log in diretta
 
 | Sintomo | Soluzione |
 |---|---|
+| Qualsiasi cosa | Parti da `python -m tars.app --doctor` — individua il sottosistema guasto |
 | I servo tremano o scattano | 9 volte su 10 è alimentazione: buck converter non a **6,2 V**, batteria sottodimensionata, o manca la **massa comune** tra rail V+ del PCA9685 e Pi |
 | `No PCA9685 found` sul robot | Abilita I2C (`sudo raspi-config`), poi `i2cdetect -y 1` deve mostrare `0x40`; controlla i cavi SDA/SCL |
 | Il microfono non viene rilevato | `arecord -l` per elencare i dispositivi; imposta la scheda USB come default in `~/.asoundrc` |

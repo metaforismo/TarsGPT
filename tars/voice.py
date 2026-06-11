@@ -16,6 +16,19 @@ from .speech import Speaker
 
 log = logging.getLogger("tars.voice")
 
+ACK_DEFAULTS = {"en": "Yes?", "it": "Sì?", "es": "¿Sí?", "fr": "Oui ?",
+                "de": "Ja?", "pt": "Sim?", "ja": "Hai?"}
+
+
+def resolve_ack(s: Settings) -> str | None:
+    """The short phrase spoken right after the wake word, so the user knows
+    TARS is listening. 'auto' picks per language, 'off'/'' disables."""
+    if s.ack in ("off", ""):
+        return None
+    if s.ack == "auto":
+        return ACK_DEFAULTS.get(s.language, "Yes?")
+    return s.ack
+
 
 class VoiceLoop:
     def __init__(self, s: Settings, brain: Brain, speaker: Speaker,
@@ -54,6 +67,11 @@ class VoiceLoop:
         while self.running:
             self.state = "waiting"
             if self._wait_for_wake_word():
+                ack = resolve_ack(self.s)
+                if ack:
+                    # speak before opening the mic, or TARS hears itself
+                    self.speaker.say(ack)
+                    self.speaker.wait()
                 self._interact()
 
     def _wake_capable(self) -> bool:

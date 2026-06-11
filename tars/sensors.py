@@ -10,7 +10,9 @@ log = logging.getLogger("tars.imu")
 MPU_ADDRESS = 0x68
 PWR_MGMT_1 = 0x6B
 ACCEL_XOUT_H = 0x3B
+GYRO_XOUT_H = 0x43
 ACCEL_SCALE = 16384.0  # LSB per g at the default +/-2g range
+GYRO_SCALE = 131.0     # LSB per deg/s at the default +/-250 deg/s range
 
 
 class Imu:
@@ -34,12 +36,11 @@ class Imu:
     def available(self) -> bool:
         return self._bus is not None
 
-    def read_accel(self) -> tuple[float, float, float] | None:
-        """Acceleration in g, or None without a sensor."""
+    def _read_vector(self, register: int, scale: float):
         if self._bus is None:
             return None
         try:
-            raw = self._bus.read_i2c_block_data(self.address, ACCEL_XOUT_H, 6)
+            raw = self._bus.read_i2c_block_data(self.address, register, 6)
         except OSError as e:
             log.warning("IMU read failed: %s", e)
             return None
@@ -48,9 +49,16 @@ class Imu:
             value = (raw[hi] << 8) | raw[lo]
             return value - 65536 if value > 32767 else value
 
-        return (word(0, 1) / ACCEL_SCALE,
-                word(2, 3) / ACCEL_SCALE,
-                word(4, 5) / ACCEL_SCALE)
+        return (word(0, 1) / scale, word(2, 3) / scale, word(4, 5) / scale)
+
+    def read_accel(self) -> tuple[float, float, float] | None:
+        """Acceleration in g, or None without a sensor."""
+        return self._read_vector(ACCEL_XOUT_H, ACCEL_SCALE)
+
+    def read_gyro(self) -> tuple[float, float, float] | None:
+        """Angular velocity in deg/s, or None without a sensor. Useful to
+        spot wobbly gaits (high rates without a fall)."""
+        return self._read_vector(GYRO_XOUT_H, GYRO_SCALE)
 
     def is_upright(self, tolerance: float = 0.6) -> bool | None:
         """True if gravity points along the configured upright axis (i.e.

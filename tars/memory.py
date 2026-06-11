@@ -34,13 +34,17 @@ class Memory:
     def _load(self):
         if MEMORY_FILE.exists():
             try:
-                self.notes = json.loads(MEMORY_FILE.read_text()).get("notes", [])
+                stored = json.loads(MEMORY_FILE.read_text())
+                self.notes = stored.get("notes", [])
+                # the conversation survives restarts too
+                self.turns = stored.get("turns", [])[-SHORT_TERM_TURNS * 2:]
             except (json.JSONDecodeError, OSError):
                 self.notes = []
 
     def _save(self):
         DATA_DIR.mkdir(parents=True, exist_ok=True)
-        MEMORY_FILE.write_text(json.dumps({"notes": self.notes},
+        MEMORY_FILE.write_text(json.dumps({"notes": self.notes,
+                                           "turns": self.turns},
                                           indent=2, ensure_ascii=False))
 
     # ---------- short term ----------
@@ -49,10 +53,12 @@ class Memory:
         with self._lock:
             self.turns.append({"role": role, "content": content})
             self.turns = self.turns[-SHORT_TERM_TURNS * 2:]
+            self._save()
 
     def clear(self):
         with self._lock:
             self.turns = []
+            self._save()
 
     # ---------- long term ----------
 
