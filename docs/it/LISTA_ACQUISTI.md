@@ -2,7 +2,7 @@
 
 > Distinta base (BOM) completa per una build TARS-AI **V3** (il design attualmente raccomandato dalla [TARS-AI Community](https://github.com/TARS-AI-Community/TARS-AI)), più stampante 3D, filamento, materiali per la finitura e un'alternativa economica.
 >
-> 🇬🇧 English version: [SHOPPING_LIST.md](../en/SHOPPING_LIST.md)
+> 🇬🇧 English version: [SHOPPING_LIST.md](../en/SHOPPING_LIST.md) · 💶 Prezzi voce per voce e totali per scenario: [STIMA_COSTI.md](STIMA_COSTI.md)
 
 **Panoramica budget**
 

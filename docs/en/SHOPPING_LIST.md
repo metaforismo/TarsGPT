@@ -2,7 +2,7 @@
 
 > Complete bill of materials for a TARS-AI **V3** build (the current recommended design from the [TARS-AI Community](https://github.com/TARS-AI-Community/TARS-AI)), plus the 3D printer, filament, finishing supplies and a budget alternative.
 >
-> 🇮🇹 Versione italiana: [LISTA_ACQUISTI.md](../it/LISTA_ACQUISTI.md)
+> 🇮🇹 Versione italiana: [LISTA_ACQUISTI.md](../it/LISTA_ACQUISTI.md) · 💶 Itemized prices and scenario totals: [COST_ESTIMATE.md](COST_ESTIMATE.md)
 
 **Budget overview**
 

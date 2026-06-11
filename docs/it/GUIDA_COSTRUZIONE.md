@@ -13,7 +13,7 @@
 | **[TARS-AI Community](https://github.com/TARS-AI-Community/TARS-AI)** ⭐ | L'esperienza completa | Pi 5, IA completa (LLM, TTS, STT, wake word, UI web, plugin "skills") | CC BY-NC 4.0 |
 | **[latishab/tars](https://github.com/latishab/tars)** | Sviluppatori | Daemon hardware sul Pi + API gRPC/WebRTC; le app IA girano ovunque (`pip install tars-robot[daemon]`); dashboard su `http://tars.local:8000` | vedi LEGAL.md |
 | **[TARS-WIZARD](https://github.com/DhruvGoswami10/TARS-WIZARD)** | Budget / multilingua | Pi 5, 3 servo, personalità GPT-3.5, voce in EN/ES/FR/DE/**IT**/PT/JA | MIT |
-| **Questa repo (script legacy)** | Guida manuale col gamepad | `TARSRunner.py` + PCA9685, 8BitDo Zero 2 | MIT |
+| **Questa repo (runtime TarsGPT)** | Implementazione originale tutto-in-uno | IA vocale + personalità + andature + dashboard web + gamepad — vedi [SOFTWARE.md](SOFTWARE.md) | MIT |
 
 **Perché costruire l'hardware V3:** un servo extra nel torso per il movimento indipendente delle gambe, **nessuna saldatura richiesta**, elettronica modulare, porte USB/HDMI accessibili, cablaggio più ordinato e costo totale inferiore rispetto a V1/V2.
 
@@ -57,52 +57,41 @@ Segui passo passo la [wiki V3](https://github.com/TARS-AI-Community/TARS-AI/wiki
 
 ## 5. Software
 
-### Strada A — TARS-AI V3 (consigliata)
+### Strada A — Runtime TarsGPT (questa repo, consigliata)
+
+La nostra implementazione originale tutto-in-uno: wake word, STT, personalità LLM con movimenti a comando vocale, TTS, memoria, dashboard web e gamepad. Manuale completo: [SOFTWARE.md](SOFTWARE.md).
 
 ```bash
 # 1. Flasha Raspberry Pi OS 64-bit con Raspberry Pi Imager
 #    Abilita I2C, SPI e camera in raspi-config; aggiungi l'overlay DSI a config.txt
 
 # 2. Installa
-git clone -b V3 https://github.com/TARS-AI-Community/TARS-AI
-cd TARS-AI
-./Install.sh
+git clone https://github.com/metaforismo/TarsGPT
+cd TarsGPT
+./install.sh
+cp .env.example .env     # inserisci OPENAI_API_KEY (e ELEVENLABS_API_KEY per la voce del film)
 
-# 3. Configura .env con le tue chiavi API
-#    OPENAI_API_KEY  (obbligatoria)
-#    ELEVENLABS_API_KEY  (consigliata per la voce del film)
+# 3. Calibra i servo PRIMA del primo avvio
+source .venv/bin/activate
+python servo_tester.py
 
-# 4. Calibra i servo PRIMA del primo avvio
-python app-servotester.py
-
-# 5. Avvia
-./tars-launcher.sh
+# 4. Avvia
+python -m tars.app
 ```
 
-Ottieni: dashboard web, interazione vocale con wake word, la personalità di TARS (umorismo regolabile — *"Qual è il tuo livello di umorismo, TARS?" "Al 100 percento."*), visione e il sistema di skill.
+Ottieni: dashboard web su `http://<pi>:8000`, voce a mani libere con wake word, personalità regolabile (*"Qual è il tuo livello di umorismo, TARS?" "Al 100 percento."*), memoria a lungo termine e guida col gamepad — tutto in un unico processo.
 
-### Strada B — latishab/tars (distribuito)
+### Strada B — Stack TARS-AI Community
 
-```bash
-pip install "tars-robot[daemon]"   # sul Pi
-```
+Il software del progetto community (branch V3 + `Install.sh` + `tars-launcher.sh`) offre extra come identificazione dello speaker, sistema di plugin "skill", Spotify e face detection. Più pesante e complesso; vedi la loro wiki.
 
-Il daemon espone gRPC (`:50051`) e WebRTC (`:8000`): il "cervello" IA può girare su un PC/server lasciando leggero il Pi. Dashboard su `http://tars.local:8000`. L'app `tars-conversation-app` aggiunge la voce IA (LLM+STT+TTS).
+### Strada C — Setup distribuito (fork latishab)
 
-### Strada C — Controllo gamepad legacy (questa repo)
-
-Lo stack di controllo originale stile Charles Diaz: accoppia un 8BitDo Zero 2, poi:
-
-```bash
-pip install evdev adafruit-pca9685
-python TARSRunner.py
-```
-
-D-pad su = passo avanti, sinistra/destra = svolta, giù = posa, grilletti/tasti = braccia. Controlla `/dev/input/event*` per il numero del tuo gamepad. Perfetto per testare la meccanica prima di installare lo stack IA.
+`pip install "tars-robot[daemon]"` sul Pi espone API gRPC (`:50051`) e WebRTC (`:8000`): il "cervello" IA può girare su un PC/server separato, lasciando leggero il Pi.
 
 ## 6. Calibrazione e primi passi
 
-1. Col guscio aperto, lancia il servo tester e trova i valori PWM di neutro/min/max di ogni servo; il `ServoController.py` legacy mostra il tipo di valori attesi (es. altezza neutra 275, su 205, giù 450).
+1. Col guscio aperto, lancia `python servo_tester.py` e trova i valori PWM di neutro/min/max di ogni servo (tipici: altezza neutra 275, su 205, giù 450), poi salvali in `data/settings.json` sotto `"pwm"`.
 2. Stringi le squadrette dei servo solo dopo averli centrati.
 3. Primo test di camminata sulla moquette/tappeto (più grip, le cadute fanno meno danni). L'andatura V3 atterra col torso a filo del pavimento, migliorando la camminata su superfici con attrito diverso.
 4. Regola la personalità dalla UI web (umorismo %, onestà %, voce).

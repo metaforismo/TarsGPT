@@ -1,61 +1,103 @@
-# TarsGPT — Build Your Own TARS from Interstellar
+# TarsGPT — A Complete AI Robot Inspired by TARS
 
-🇬🇧 English | 🇮🇹 [Italiano più sotto](#tarsgpt--costruisci-il-tuo-tars-di-interstellar)
+🇬🇧 English | 🇮🇹 [Italiano più sotto](#tarsgpt--un-robot-ia-completo-ispirato-a-tars)
 
 ![TARS](https://github.com/user-attachments/assets/cb7f6acf-b7c4-41ff-ab1a-2640e8610c68)
 
-TarsGPT is a guide and codebase for building a functional, AI-powered replica of TARS, the robot from Christopher Nolan's *Interstellar*. This repository consolidates the best knowledge from the entire TARS builder ecosystem — the original Charles Diaz build, the [TARS-AI Community](https://github.com/TARS-AI-Community/TARS-AI) project (the most active and complete), [latishab/tars](https://github.com/latishab/tars) (distributed architecture fork), and [TARS-WIZARD](https://github.com/DhruvGoswami10/TARS-WIZARD) (budget multilingual build) — into one place.
+TarsGPT is a **complete, self-contained robot project**: an original Python runtime (voice AI, personality, movement, web dashboard) plus full bilingual documentation to design, print, wire, assemble and finish a walking TARS-style robot.
+
+## ✨ Features
+
+- 🗣️ **Hands-free voice AI** — offline wake word ("TARS"), Whisper or Vosk speech recognition, ElevenLabs/OpenAI/espeak text-to-speech with automatic fallback
+- 🧠 **Adjustable personality** — humor, honesty and sarcasm from 0 to 100%, changeable from the dashboard or by simply *asking the robot*
+- 🦿 **Walking gaits** — step, turns, "monolith" pose; voice-commanded ("TARS, walk forward") via LLM tool-calling
+- 💾 **Long-term memory** — the robot decides what to remember and keeps it across restarts
+- 🌐 **Web dashboard** — chat, movement pad, personality sliders, voice control at `http://<pi>:8000`
+- 🎮 **Gamepad driving** — 8BitDo Zero 2 support
+- 🌍 **Multilingual** — English, Italian, Spanish, French, German, Portuguese, Japanese
+- 💻 **Simulation mode** — develop everything on a laptop, no hardware needed (`--sim`)
+
+## 🚀 Quick start
+
+```bash
+git clone https://github.com/metaforismo/TarsGPT
+cd TarsGPT
+./install.sh
+cp .env.example .env        # add your OPENAI_API_KEY
+source .venv/bin/activate
+python -m tars.app --sim    # try it now, robot optional
+```
 
 ## 📚 Documentation
 
 | English | Italiano |
 |---|---|
-| [Complete Build Guide](docs/en/BUILD_GUIDE.md) | [Guida completa alla costruzione](docs/it/GUIDA_COSTRUZIONE.md) |
-| [Shopping List & 3D Printing Guide](docs/en/SHOPPING_LIST.md) | [Lista acquisti e guida alla stampa 3D](docs/it/LISTA_ACQUISTI.md) |
+| [Software architecture & manual](docs/en/SOFTWARE.md) | [Architettura software e manuale](docs/it/SOFTWARE.md) |
+| [Complete build guide](docs/en/BUILD_GUIDE.md) | [Guida completa alla costruzione](docs/it/GUIDA_COSTRUZIONE.md) |
+| [Shopping list, printers, metal finish](docs/en/SHOPPING_LIST.md) | [Lista acquisti, stampanti, effetto metallo](docs/it/LISTA_ACQUISTI.md) |
+| [Cost estimate, line by line](docs/en/COST_ESTIMATE.md) | [Stima dei costi, voce per voce](docs/it/STIMA_COSTI.md) |
 
-The shopping list covers **everything you need to buy**: electronics, servos, power, the recommended **Bambu Lab 3D printers**, which **filament** to use, and **how to achieve the movie-accurate brushed-metal finish**.
+## 🔩 Hardware at a glance
 
-## 🤖 What's in this repo
+Raspberry Pi 5 (8 GB) · PCA9685 servo driver · 4–6 MG996R + 4 MG90S servos · 5" DSI touchscreen · camera · 12 V battery with dual buck converters · ~1.5 kg PETG. Full details and totals (from **≈ €280** if you own a printer) in the [cost estimate](docs/en/COST_ESTIMATE.md).
 
-| File | Purpose |
-|---|---|
-| `TARSRunner.py` | Initializes TARS and maps a Bluetooth gamepad (8BitDo Zero 2) to movements |
-| `ServoController.py` | Low-level servo movements via the Adafruit PCA9685 driver |
-| `ServoAbstractor.py` | High-level gaits (step forward, turn left/right, pose) composed from basic movements |
-| `525125.STEP` | CAD reference file |
+## 📁 Repository layout
 
-This code is the classic "legacy" gamepad-driven movement stack. For the full AI experience (voice, LLM personality, vision, web UI) follow the [Build Guide](docs/en/BUILD_GUIDE.md), which walks you through installing the TARS-AI Community software on top of the same hardware.
+```
+tars/                # the robot runtime (original implementation)
+  app.py             # entrypoint: python -m tars.app
+  llm.py             # LLM brain, persona, move/remember/personality tools
+  voice.py stt.py tts.py audio.py
+  movement/          # PCA9685 driver, gaits, gamepad
+  web/               # Flask dashboard
+servo_tester.py      # interactive servo calibration
+legacy/              # the original gamepad-only scripts (kept for reference)
+docs/                # bilingual documentation (en/, it/)
+```
 
-## 🌐 The TARS ecosystem at a glance
+## Credits & license
 
-- **[TARS-AI Community](https://github.com/TARS-AI-Community/TARS-AI)** — the reference project. V3 hardware (no soldering, modular electronics), full AI stack (LLM + TTS + STT + wake word + web dashboard), 5 releases up to **OS Amelia** (2026). License: **CC BY-NC 4.0** (non-commercial, attribution required). Docs: [docs-tars-ai.vercel.app](https://docs-tars-ai.vercel.app) · [Wiki](https://github.com/TARS-AI-Community/TARS-AI/wiki) · [Discord](https://discord.gg/AmE2Gv9EUt)
-- **[latishab/tars](https://github.com/latishab/tars)** — distributed-architecture fork: a hardware daemon on the Pi exposes gRPC/WebRTC APIs so AI apps can run on any machine. `pip install tars-robot[daemon]`.
-- **[TARS-WIZARD](https://github.com/DhruvGoswami10/TARS-WIZARD)** ([site](https://tars-wizard.vercel.app)) — budget build (~$200–280), 3 servos, GPT personality, speech in 7 languages **including Italian**. MIT license.
-
-## Credits
-
-Based on the original build by **Charles Diaz** ([Hackster.io guide](https://www.hackster.io/charlesdiaz/how-to-build-your-own-replica-of-tars-from-interstellar-224833)) and on the work of the [TARS-AI Community](https://github.com/TARS-AI-Community/TARS-AI) and all the projects linked above. TARS-AI content is used under CC BY-NC 4.0 with attribution; this repository is likewise intended for personal, educational, non-commercial use.
+Code in this repository: MIT (see [LICENSE](LICENSE)). The 3D-printable chassis files referenced in the build guide are by the TARS-AI Community (CC BY-NC 4.0) — required attribution for the printed parts only. TARS is a character from *Interstellar*; this is a non-commercial fan project.
 
 ---
 
-# TarsGPT — Costruisci il tuo TARS di Interstellar
+# TarsGPT — Un Robot IA Completo Ispirato a TARS
 
-TarsGPT è una guida (con codice) per costruire una replica funzionante e dotata di IA di TARS, il robot di *Interstellar*. Questa repository riunisce il meglio dell'intero ecosistema TARS — la build originale di Charles Diaz, il progetto [TARS-AI Community](https://github.com/TARS-AI-Community/TARS-AI) (il più attivo e completo), [latishab/tars](https://github.com/latishab/tars) (architettura distribuita) e [TARS-WIZARD](https://github.com/DhruvGoswami10/TARS-WIZARD) (build economica e multilingua) — in un unico posto.
+TarsGPT è un **progetto robot completo e autonomo**: un runtime Python originale (IA vocale, personalità, movimento, dashboard web) più documentazione bilingue completa per progettare, stampare, cablare, assemblare e rifinire un robot stile TARS che cammina.
+
+## ✨ Funzionalità
+
+- 🗣️ **IA vocale a mani libere** — wake word offline ("TARS"), riconoscimento Whisper o Vosk, sintesi ElevenLabs/OpenAI/espeak con fallback automatico
+- 🧠 **Personalità regolabile** — umorismo, onestà e sarcasmo da 0 a 100%, modificabili dalla dashboard o semplicemente *chiedendolo al robot*
+- 🦿 **Andature** — passo, svolte, posa "monolite"; comandi vocali ("TARS, cammina") via tool-calling LLM
+- 💾 **Memoria a lungo termine** — il robot decide cosa ricordare e lo conserva tra i riavvii
+- 🌐 **Dashboard web** — chat, pulsantiera movimenti, slider personalità, controllo voce su `http://<pi>:8000`
+- 🎮 **Guida col gamepad** — supporto 8BitDo Zero 2
+- 🌍 **Multilingua** — italiano, inglese, spagnolo, francese, tedesco, portoghese, giapponese
+- 💻 **Modalità simulazione** — sviluppa tutto su un portatile, senza hardware (`--sim`)
+
+## 🚀 Avvio rapido
+
+```bash
+git clone https://github.com/metaforismo/TarsGPT
+cd TarsGPT
+./install.sh
+cp .env.example .env        # inserisci la tua OPENAI_API_KEY
+source .venv/bin/activate
+python -m tars.app --sim    # provalo subito, robot opzionale
+```
 
 ## 📚 Documentazione
 
-- **[Guida completa alla costruzione (IT)](docs/it/GUIDA_COSTRUZIONE.md)** — stampa 3D, assemblaggio, elettronica, software IA
-- **[Lista acquisti e guida alla stampa 3D (IT)](docs/it/LISTA_ACQUISTI.md)** — tutto quello che serve comprare: elettronica, servo, alimentazione, **quale stampante Bambu Lab scegliere**, **quale filamento usare** e **come ottenere l'effetto metallo spazzolato** identico al film
+- [Architettura software e manuale](docs/it/SOFTWARE.md)
+- [Guida completa alla costruzione](docs/it/GUIDA_COSTRUZIONE.md)
+- [Lista acquisti, stampanti Bambu Lab, effetto metallo](docs/it/LISTA_ACQUISTI.md)
+- [Stima dei costi, voce per voce](docs/it/STIMA_COSTI.md)
 
-## 🤖 Contenuto della repo
+## 🔩 Hardware in sintesi
 
-- `TARSRunner.py` — avvia TARS e mappa il gamepad Bluetooth (8BitDo Zero 2) ai movimenti
-- `ServoController.py` — movimenti base dei servo tramite driver Adafruit PCA9685
-- `ServoAbstractor.py` — andature di alto livello (passo avanti, svolta, posa)
-- `525125.STEP` — file CAD di riferimento
+Raspberry Pi 5 (8 GB) · driver servo PCA9685 · 4–6 servo MG996R + 4 MG90S · touchscreen DSI 5" · camera · batteria 12 V con doppio buck converter · ~1,5 kg di PETG. Dettagli completi e totali (da **≈ 280 €** se hai già la stampante) nella [stima dei costi](docs/it/STIMA_COSTI.md).
 
-Questo codice è lo stack "classico" di movimento via gamepad. Per l'esperienza IA completa (voce, personalità LLM, visione, dashboard web) segui la [Guida alla costruzione](docs/it/GUIDA_COSTRUZIONE.md), che spiega come installare il software della TARS-AI Community sullo stesso hardware.
+## Crediti e licenza
 
-## Crediti
-
-Basato sulla build originale di **Charles Diaz** e sul lavoro della [TARS-AI Community](https://github.com/TARS-AI-Community/TARS-AI) (licenza CC BY-NC 4.0, attribuzione obbligatoria, uso non commerciale) e degli altri progetti linkati sopra. Questa repository è destinata a uso personale, educativo e non commerciale.
+Il codice di questa repository è MIT (vedi [LICENSE](LICENSE)). I file 3D del telaio citati nella guida sono della TARS-AI Community (CC BY-NC 4.0) — attribuzione necessaria solo per le parti stampate. TARS è un personaggio di *Interstellar*; questo è un fan project non commerciale.

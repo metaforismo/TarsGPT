@@ -13,7 +13,7 @@
 | **[TARS-AI Community](https://github.com/TARS-AI-Community/TARS-AI)** ⭐ | The full experience | Pi 5, full AI (LLM, TTS, STT, wake word, web UI, skills plugins) | CC BY-NC 4.0 |
 | **[latishab/tars](https://github.com/latishab/tars)** | Developers | Hardware daemon on the Pi + gRPC/WebRTC APIs; AI apps run anywhere (`pip install tars-robot[daemon]`); web dashboard at `http://tars.local:8000` | see LEGAL.md |
 | **[TARS-WIZARD](https://github.com/DhruvGoswami10/TARS-WIZARD)** | Budget / multilingual | Pi 5, 3 servos, GPT-3.5 personality, voice in EN/ES/FR/DE/**IT**/PT/JA | MIT |
-| **This repo (legacy scripts)** | Manual gamepad driving | `TARSRunner.py` + PCA9685, 8BitDo Zero 2 | MIT |
+| **This repo (TarsGPT runtime)** | Original all-in-one implementation | Voice AI + personality + gaits + web dashboard + gamepad — see [SOFTWARE.md](SOFTWARE.md) | MIT |
 
 **Why V3 hardware is the one to build:** an extra torso servo for independent leg movement, **no soldering required**, modular electronics, accessible USB/HDMI ports, better cable management, and lower total cost than V1/V2.
 
@@ -57,52 +57,41 @@ Follow the [V3 wiki](https://github.com/TARS-AI-Community/TARS-AI/wiki/V3) step 
 
 ## 5. Software
 
-### Path A — TARS-AI V3 (recommended)
+### Path A — TarsGPT runtime (this repo, recommended)
+
+Our original all-in-one implementation: wake word, STT, LLM personality with voice-commanded movement, TTS, memory, web dashboard and gamepad. Full manual: [SOFTWARE.md](SOFTWARE.md).
 
 ```bash
 # 1. Flash Raspberry Pi OS 64-bit with Raspberry Pi Imager
 #    Enable I2C, SPI, camera in raspi-config; add the DSI overlay to config.txt
 
 # 2. Install
-git clone -b V3 https://github.com/TARS-AI-Community/TARS-AI
-cd TARS-AI
-./Install.sh
+git clone https://github.com/metaforismo/TarsGPT
+cd TarsGPT
+./install.sh
+cp .env.example .env     # add OPENAI_API_KEY (and ELEVENLABS_API_KEY for the movie voice)
 
-# 3. Configure .env with your API keys
-#    OPENAI_API_KEY  (required)
-#    ELEVENLABS_API_KEY  (recommended for the movie voice)
+# 3. Calibrate the servos BEFORE first run
+source .venv/bin/activate
+python servo_tester.py
 
-# 4. Calibrate the servos BEFORE first run
-python app-servotester.py
-
-# 5. Launch
-./tars-launcher.sh
+# 4. Launch
+python -m tars.app
 ```
 
-You get: the web dashboard, voice interaction with wake word, the TARS personality (adjustable humor — *"What's your humor setting, TARS?" "That's 100 percent."*), vision, and the skills system.
+You get: web dashboard at `http://<pi>:8000`, hands-free voice with wake word, adjustable personality (*"What's your humor setting, TARS?" "That's 100 percent."*), long-term memory and gamepad driving — all in one process.
 
-### Path B — latishab/tars (distributed)
+### Path B — TARS-AI Community stack
 
-```bash
-pip install "tars-robot[daemon]"   # on the Pi
-```
+The community project's software (V3 branch + `Install.sh` + `tars-launcher.sh`) offers extras like speaker identification, a skills plugin system, Spotify and face detection. Heavier and more complex; see their wiki.
 
-The daemon exposes gRPC (`:50051`) and WebRTC (`:8000`) so you can run the AI brain on a PC/server and keep the Pi light. Dashboard at `http://tars.local:8000`. The `tars-conversation-app` adds LLM+STT+TTS voice AI.
+### Path C — Distributed setup (latishab fork)
 
-### Path C — Legacy gamepad control (this repo)
-
-The original Charles Diaz-style control stack: pair an 8BitDo Zero 2, then:
-
-```bash
-pip install evdev adafruit-pca9685
-python TARSRunner.py
-```
-
-D-pad up = step forward, left/right = turn, down = pose, triggers/face buttons = arms. Check `/dev/input/event*` for your gamepad's device number. This is great for testing the mechanics before installing the AI stack.
+`pip install "tars-robot[daemon]"` on the Pi exposes gRPC (`:50051`) and WebRTC (`:8000`) APIs so the AI brain can run on a separate PC/server, keeping the Pi light.
 
 ## 6. Calibration & first steps
 
-1. With the hull open, run the servo tester and find each servo's neutral/min/max PWM values; the legacy `ServoController.py` shows the kind of values to expect (e.g. neutral height 275, up 205, down 450).
+1. With the hull open, run `python servo_tester.py` and find each servo's neutral/min/max PWM values (typical: neutral height 275, up 205, down 450), then store them in `data/settings.json` under `"pwm"`.
 2. Tighten servo horns only after centering.
 3. First walk test on carpet (more grip, falls hurt less). The V3 gait lands flush on the torso, which improves walking across surfaces with different friction.
 4. Tune the personality in the web UI (humor %, honesty %, voice).

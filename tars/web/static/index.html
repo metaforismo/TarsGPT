@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TARS</title>
+<style>
+  :root { --bg:#0b0e11; --panel:#14181d; --line:#2a313a; --fg:#d7dde4; --acc:#62d0ff; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.5 "Segoe UI",system-ui,sans-serif; background:var(--bg); color:var(--fg);
+         display:grid; grid-template-rows:auto 1fr auto; height:100vh; }
+  header { display:flex; align-items:center; gap:12px; padding:10px 16px; border-bottom:1px solid var(--line); }
+  header h1 { font-size:18px; letter-spacing:4px; margin:0; }
+  #status { margin-left:auto; font-size:12px; color:#8b96a3; }
+  main { display:grid; grid-template-columns:1fr 270px; gap:0; min-height:0; }
+  #chat { overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px; }
+  .msg { max-width:75%; padding:9px 13px; border-radius:10px; white-space:pre-wrap; }
+  .user { align-self:flex-end; background:#1d3a52; }
+  .tars { align-self:flex-start; background:var(--panel); border:1px solid var(--line); }
+  aside { border-left:1px solid var(--line); padding:14px; overflow-y:auto; }
+  aside h2 { font-size:12px; text-transform:uppercase; letter-spacing:2px; color:#8b96a3; margin:14px 0 8px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; }
+  button { background:var(--panel); color:var(--fg); border:1px solid var(--line); border-radius:8px;
+           padding:9px 6px; cursor:pointer; font-size:13px; }
+  button:hover { border-color:var(--acc); color:var(--acc); }
+  label { display:flex; justify-content:space-between; font-size:13px; margin-top:8px; }
+  input[type=range] { width:100%; accent-color:var(--acc); }
+  footer { display:flex; gap:8px; padding:12px 16px; border-top:1px solid var(--line); }
+  #box { flex:1; background:var(--panel); border:1px solid var(--line); border-radius:8px;
+         color:var(--fg); padding:10px 12px; font-size:15px; }
+  #box:focus { outline:1px solid var(--acc); }
+  .wide { grid-column:1 / -1; }
+</style>
+</head>
+<body>
+<header>
+  <svg width="22" height="34" viewBox="0 0 22 34"><rect x="1" y="1" width="20" height="32" rx="2"
+    fill="none" stroke="#62d0ff" stroke-width="2"/><line x1="6.5" y1="1" x2="6.5" y2="33" stroke="#2a313a"/>
+    <line x1="11" y1="1" x2="11" y2="33" stroke="#2a313a"/><line x1="15.5" y1="1" x2="15.5" y2="33" stroke="#2a313a"/></svg>
+  <h1 id="name">TARS</h1>
+  <span id="status">connecting…</span>
+</header>
+
+<main>
+  <div id="chat"></div>
+  <aside>
+    <h2>Movement</h2>
+    <div class="grid">
+      <button class="wide" onclick="move('step_forward')">▲ Step forward</button>
+      <button onclick="move('turn_left')">◀ Left</button>
+      <button onclick="move('pose')">Pose</button>
+      <button onclick="move('turn_right')">Right ▶</button>
+      <button class="wide" onclick="move('neutral')">Neutral stance</button>
+    </div>
+    <h2>Voice</h2>
+    <div class="grid">
+      <button onclick="voice('start')">Wake on</button>
+      <button onclick="voice('stop')">Off</button>
+      <button onclick="voice('ptt')">🎤 Talk</button>
+    </div>
+    <h2>Personality</h2>
+    <label>Humor <span id="humorVal"></span></label>
+    <input type="range" id="humor" min="0" max="100" onchange="saveSettings()">
+    <label>Honesty <span id="honestyVal"></span></label>
+    <input type="range" id="honesty" min="0" max="100" onchange="saveSettings()">
+    <label>Sarcasm <span id="sarcasmVal"></span></label>
+    <input type="range" id="sarcasm" min="0" max="100" onchange="saveSettings()">
+  </aside>
+</main>
+
+<footer>
+  <input id="box" placeholder="Say something to TARS… (Enter to send)" autofocus>
+  <button onclick="send()">Send</button>
+</footer>
+
+<script>
+const chat = document.getElementById('chat');
+const box = document.getElementById('box');
+
+function add(cls, text) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + cls;
+  div.textContent = text;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+
+async function send() {
+  const text = box.value.trim();
+  if (!text) return;
+  box.value = '';
+  add('user', text);
+  const pending = add('tars', '…');
+  try {
+    const r = await fetch('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'},
+                                        body: JSON.stringify({message:text})});
+    pending.textContent = (await r.json()).reply || '(no reply)';
+  } catch (e) { pending.textContent = 'Connection error: ' + e; }
+}
+box.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+
+async function move(action) {
+  await fetch('/api/move', {method:'POST', headers:{'Content-Type':'application/json'},
+                            body: JSON.stringify({action})});
+}
+async function voice(cmd) { await fetch('/api/voice/' + cmd, {method:'POST'}); }
+
+async function loadSettings() {
+  const s = await (await fetch('/api/settings')).json();
+  document.getElementById('name').textContent = s.robot_name;
+  for (const k of ['humor','honesty','sarcasm']) {
+    document.getElementById(k).value = s[k];
+    document.getElementById(k + 'Val').textContent = s[k] + '%';
+  }
+}
+async function saveSettings() {
+  const body = {};
+  for (const k of ['humor','honesty','sarcasm']) {
+    body[k] = +document.getElementById(k).value;
+    document.getElementById(k + 'Val').textContent = body[k] + '%';
+  }
+  await fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'},
+                                body: JSON.stringify(body)});
+}
+async function poll() {
+  try {
+    const st = await (await fetch('/api/status')).json();
+    document.getElementById('status').textContent =
+      (st.sim ? 'SIM MODE · ' : '') + 'voice: ' + st.voice;
+  } catch { document.getElementById('status').textContent = 'offline'; }
+}
+loadSettings(); poll(); setInterval(poll, 3000);
+</script>
+</body>
+</html>
