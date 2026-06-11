@@ -38,10 +38,12 @@
    (timer, watchdog batteria)           └──────┬────────┘
                                                │ tool call
                                  ┌─────────────▼─────────────┐
-                                 │ Registro skill (plugin)   │
+                                 │ Registro skill (14 plugin)│
                                  │ move · remember · recall  │
-                                 │ set_timer · look ·        │
-                                 │ system_status · persona   │
+                                 │ set_timer · look · persona│
+                                 │ system_status · learn_fact│
+                                 │ query/forget_facts · music│
+                                 │ home_assistant · enroll   │
                                  └──────┬──────────┬─────────┘
                                         ▼          ▼
    gamepad (evdev) ───────────▶ Gaits ▶ PCA9685   Scheduler (heartbeat)
