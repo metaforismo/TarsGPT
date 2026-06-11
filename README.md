@@ -8,7 +8,11 @@ TarsGPT is a **complete, self-contained robot project**: an original Python runt
 
 ## ✨ Features
 
-- 🧩 **Skills plugin system** — drop a decorated Python function in `tars/skills/` and it becomes an LLM tool automatically; 7 built-in skills
+- 🧩 **Skills plugin system** — drop a decorated Python function in `tars/skills/` and it becomes an LLM tool automatically; 14 built-in skills
+- 🕸️ **Knowledge graph** — structured facts ("Francesco owns a P1S") learned, deduplicated, persisted and injected when relevant
+- 🪪 **Speaker identification** *(experimental)* — enroll your voice and TARS knows who's talking
+- 📱 **Browser voice mode** — talk to TARS from any phone/PC on the network, replies stream back as audio
+- 🏠 **Home Assistant & music** — control smart-home devices, play radio stations or local files
 - ⚡ **Streaming voice pipeline** — the reply is spoken sentence by sentence *while the LLM is still generating*; the web chat streams too (SSE)
 - 🗣️ **Hands-free voice AI** — offline wake word ("TARS"), Whisper or Vosk speech recognition, ElevenLabs/OpenAI/espeak text-to-speech with automatic fallback
 - 🧠 **Adjustable personality** — humor, honesty and sarcasm from 0 to 100%, changeable from the dashboard or by simply *asking the robot*
@@ -51,13 +55,16 @@ Raspberry Pi 5 (8 GB) · PCA9685 servo driver · 4–6 MG996R + 4 MG90S servos �
 tars/                # the robot runtime (original implementation)
   app.py             # entrypoint: python -m tars.app
   llm.py             # streaming LLM brain with skill tool-calling
-  skills/            # plugin skills: move, remember/recall, look, timers, status…
+  skills/            # plugin skills: move, recall, look, timers, music, HA…
   speech.py          # sentence-streaming TTS pipeline
   scheduler.py       # heartbeat scheduler (timers, battery watchdog)
   memory.py          # semantic long-term memory (embeddings + offline fallback)
+  knowledge.py       # persistent knowledge graph (s-r-o triples)
+  speakerid.py       # experimental voice fingerprinting
   voice.py stt.py tts.py audio.py
   movement/          # PCA9685 driver, gaits, gamepad
-  web/               # Flask dashboard (SSE streaming chat)
+  web/               # Flask dashboard (SSE chat, browser voice mode)
+tests/run_tests.py   # full test suite (no hardware/keys needed)
 servo_tester.py      # interactive servo calibration
 legacy/              # the original gamepad-only scripts (kept for reference)
 docs/                # bilingual documentation (en/, it/)
@@ -75,7 +82,11 @@ TarsGPT è un **progetto robot completo e autonomo**: un runtime Python original
 
 ## ✨ Funzionalità
 
-- 🧩 **Sistema di skill a plugin** — metti una funzione Python decorata in `tars/skills/` e diventa automaticamente un tool dell'LLM; 7 skill integrate
+- 🧩 **Sistema di skill a plugin** — metti una funzione Python decorata in `tars/skills/` e diventa automaticamente un tool dell'LLM; 14 skill integrate
+- 🕸️ **Knowledge graph** — fatti strutturati ("Francesco possiede una P1S") appresi, deduplicati, persistenti e iniettati quando rilevanti
+- 🪪 **Identificazione speaker** *(sperimentale)* — registra la tua voce e TARS sa chi sta parlando
+- 📱 **Voce dal browser** — parla con TARS da qualsiasi telefono/PC in rete, le risposte tornano come audio
+- 🏠 **Home Assistant e musica** — controlla la domotica, riproduci stazioni radio o file locali
 - ⚡ **Pipeline vocale in streaming** — la risposta viene pronunciata frase per frase *mentre l'LLM sta ancora generando*; anche la chat web è in streaming (SSE)
 - 🗣️ **IA vocale a mani libere** — wake word offline ("TARS"), riconoscimento Whisper o Vosk, sintesi ElevenLabs/OpenAI/espeak con fallback automatico
 - 🧠 **Personalità regolabile** — umorismo, onestà e sarcasmo da 0 a 100%, modificabili dalla dashboard o semplicemente *chiedendolo al robot*

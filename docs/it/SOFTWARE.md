@@ -6,7 +6,12 @@
 
 | Funzionalità | Come funziona | Modulo |
 |---|---|---|
-| **Sistema di skill a plugin** | Metti un file Python in `tars/skills/`, decora una funzione con `@skill` — si registra da sola come tool LLM all'avvio. 7 skill integrate | `tars/skills/` |
+| **Sistema di skill a plugin** | Metti un file Python in `tars/skills/`, decora una funzione con `@skill` — si registra da sola come tool LLM all'avvio. 14 skill integrate | `tars/skills/` |
+| **Knowledge graph** | Fatti strutturati soggetto-relazione-oggetto (`learn_fact`/`query_facts`/`forget_facts`), deduplicati, persistenti, iniettati automaticamente nel contesto quando rilevanti, visibili nella dashboard | `tars/knowledge.py` |
+| **Identificazione speaker** *(sperimentale)* | Impronte vocali a bande di energia + pitch; registrati con "impara la mia voce, sono Francesco" e TARS saprà chi parla: l'LLM vede `[Francesco is speaking]` | `tars/speakerid.py`, `tars/skills/speakers.py` |
+| **Voce dal browser** | Parla con TARS da qualsiasi telefono/PC in rete: la dashboard registra il microfono, il robot trascrive, risponde e rimanda l'audio al browser | `/api/voice/chat` + `/api/tts` |
+| **Home Assistant** | Skill `home_assistant`: accendi/spegni/interroga qualsiasi entità via API REST di HA (`HA_URL`/`HA_TOKEN`) | `tars/skills/home_assistant.py` |
+| **Musica** | `play_music`/`stop_music`: stazioni radio integrate (lofi, jazz, classica, synthwave), URL di stream o file locali via mpv | `tars/skills/music.py` |
 | **Pipeline vocale in streaming** | I token dell'LLM arrivano in streaming, vengono tagliati ai confini di frase e pronunciati subito — TARS inizia a rispondere mentre sta ancora "pensando" il resto | `tars/llm.py` + `tars/speech.py` |
 | **Wake word** ("TARS") | Offline, modello Vosk small con grammatica ristretta | `tars/voice.py` |
 | **Speech-to-text** | API OpenAI Whisper oppure Vosk completamente offline | `tars/stt.py` |
@@ -93,6 +98,9 @@ Riavvia. Fine — niente file di registrazione, niente catene di dispatch da mod
 | `/api/settings` | GET/POST | `{"humor": 75, ...}` | Leggi/modifica la personalità |
 | `/api/status` | GET | — | Stato voce, sim, batteria %, temperatura CPU |
 | `/api/memory` | GET | — | Turni recenti + note a lungo termine |
+| `/api/knowledge` | GET | — | Triple del knowledge graph |
+| `/api/voice/chat` | POST | file `audio` multipart | **Voce dal browser**: audio in ingresso → `{heard, reply}` |
+| `/api/tts` | POST | `{"text": "..."}` | File audio sintetizzato (riproduzione nel browser) |
 | `/api/voice/start\|stop\|ptt` | POST | — | Controllo loop vocale / push-to-talk |
 
 ## Riferimento configurazione
@@ -110,4 +118,4 @@ L'implementazione community più completa organizza il codice in `character/memo
 - **Tutto degrada con grazia** fino a uno stack completamente offline e a costo zero (Vosk + espeak-ng + memoria a parole chiave).
 - Stesso hardware Pi 5, stesso cablaggio PCA9685 e stesso modello di calibrazione PWM: gira invariato su una build stile V3.
 
-Idee per il prossimo giro: identificazione dello speaker, knowledge graph persistente, skill Home Assistant e musica, modalità voce dal microfono del browser.
+Tutte le funzionalità di punta del progetto community hanno ora una controparte originale qui: skill, TTS in streaming, scheduler, monitoraggio batteria, knowledge graph, identificazione speaker, Home Assistant, musica e voce dal browser — verificate dalla suite di test in `tests/run_tests.py` (`python tests/run_tests.py`, senza hardware né chiavi API).

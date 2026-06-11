@@ -6,7 +6,12 @@
 
 | Feature | How it works | Module |
 |---|---|---|
-| **Skills plugin system** | Drop a Python file in `tars/skills/`, decorate a function with `@skill` — it auto-registers as an LLM tool at startup. 7 built-in skills | `tars/skills/` |
+| **Skills plugin system** | Drop a Python file in `tars/skills/`, decorate a function with `@skill` — it auto-registers as an LLM tool at startup. 14 built-in skills | `tars/skills/` |
+| **Knowledge graph** | Structured subject-relation-object facts (`learn_fact`/`query_facts`/`forget_facts`), deduplicated, persisted, auto-injected into the context when relevant, browsable in the dashboard | `tars/knowledge.py` |
+| **Speaker identification** *(experimental)* | Band-energy + pitch voice fingerprints; enroll with "learn my voice, I'm Francesco", then TARS knows who's talking and the LLM sees `[Francesco is speaking]` | `tars/speakerid.py`, `tars/skills/speakers.py` |
+| **Browser voice mode** | Talk to TARS from any phone/PC on the network: the dashboard records your mic, the robot transcribes, replies and streams the audio back to the browser | `/api/voice/chat` + `/api/tts` |
+| **Home Assistant** | `home_assistant` skill: turn on/off/toggle/query any entity via the HA REST API (`HA_URL`/`HA_TOKEN`) | `tars/skills/home_assistant.py` |
+| **Music** | `play_music`/`stop_music`: built-in radio stations (lofi, jazz, classical, synthwave), stream URLs or local files via mpv | `tars/skills/music.py` |
 | **Streaming voice pipeline** | LLM tokens stream in, get cut at sentence boundaries and spoken immediately — TARS starts answering while still "thinking" the rest | `tars/llm.py` + `tars/speech.py` |
 | **Wake word** ("TARS") | Offline, Vosk small model with a restricted grammar | `tars/voice.py` |
 | **Speech-to-text** | OpenAI Whisper API or fully offline Vosk | `tars/stt.py` |
@@ -93,6 +98,9 @@ Restart. That's it — no registration files, no dispatch chain to edit. The LLM
 | `/api/settings` | GET/POST | `{"humor": 75, ...}` | Read/update personality |
 | `/api/status` | GET | — | Voice state, sim mode, battery %, CPU temp |
 | `/api/memory` | GET | — | Recent turns + long-term notes |
+| `/api/knowledge` | GET | — | Knowledge-graph triples |
+| `/api/voice/chat` | POST | multipart `audio` file | **Browser voice mode**: audio in → `{heard, reply}` |
+| `/api/tts` | POST | `{"text": "..."}` | Synthesized audio file (browser playback) |
 | `/api/voice/start\|stop\|ptt` | POST | — | Voice loop control / push-to-talk |
 
 ## Configuration reference
@@ -110,4 +118,4 @@ The most complete community implementation organizes its code as `character/memo
 - **Everything degrades gracefully** down to a fully offline, zero-cost stack (Vosk + espeak-ng + keyword memory).
 - Same Pi 5 hardware, PCA9685 wiring and PWM calibration model, so it runs on a standard V3-style build unchanged.
 
-Ideas for the next round: speaker identification, a persistent knowledge graph, Home Assistant and music skills, browser-microphone voice mode.
+All of the headline community features now have an original counterpart here: skills, streaming TTS, scheduler, battery monitoring, knowledge graph, speaker ID, Home Assistant, music and browser voice mode — verified by the test suite in `tests/run_tests.py` (`python tests/run_tests.py`, no hardware or API keys needed).

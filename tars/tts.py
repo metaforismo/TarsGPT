@@ -3,6 +3,9 @@
 - elevenlabs: the closest to the movie voice (clone/choose a deep, dry voice)
 - openai:     good quality, cheap, one API key for everything
 - espeak:     offline robotic fallback, zero cost
+
+synthesize() returns an audio file (also served to the browser by the web
+dashboard); speak() synthesizes and plays it on the robot's speaker.
 """
 import logging
 import subprocess
@@ -14,26 +17,42 @@ from .config import Settings
 log = logging.getLogger("tars.tts")
 
 
-def speak(text: str, s: Settings):
+def engine_chain(s: Settings) -> list[str]:
+    if s.tts_engine != "auto":
+        return [s.tts_engine, "espeak"]
+    chain = []
+    if s.elevenlabs_api_key:
+        chain.append("elevenlabs")
+    if s.openai_api_key:
+        chain.append("openai")
+    chain.append("espeak")
+    return chain
+
+
+def synthesize(text: str, s: Settings) -> str | None:
+    """Render text to an audio file; returns its path (mp3 or wav) or None."""
     if not text:
-        return
-    engine = s.tts_engine
-    if engine == "auto":
-        engine = ("elevenlabs" if s.elevenlabs_api_key
-                  else "openai" if s.openai_api_key else "espeak")
-    try:
-        if engine == "elevenlabs":
-            _elevenlabs(text, s)
-        elif engine == "openai":
-            _openai(text, s)
-        else:
-            _espeak(text, s)
-    except Exception as e:
-        log.warning("TTS engine %s failed (%s), falling back to espeak", engine, e)
-        _espeak(text, s)
+        return None
+    for engine in engine_chain(s):
+        try:
+            fn = {"elevenlabs": _elevenlabs, "openai": _openai, "espeak": _espeak}[engine]
+            path = fn(text, s)
+            if path:
+                return path
+        except Exception as e:
+            log.warning("TTS engine %s failed (%s), trying next", engine, e)
+    return None
 
 
-def _elevenlabs(text: str, s: Settings):
+def speak(text: str, s: Settings):
+    path = synthesize(text, s)
+    if path:
+        audio.play(path)
+    else:
+        log.warning("no TTS engine available; cannot speak: %r", text[:60])
+
+
+def _elevenlabs(text: str, s: Settings) -> str:
     import requests
     voice = s.elevenlabs_voice_id or "onwK4e9ZLuTAKqWW03F9"  # "Daniel": deep male default
     r = requests.post(
@@ -46,22 +65,24 @@ def _elevenlabs(text: str, s: Settings):
     path = tempfile.mktemp(suffix=".mp3", prefix="tars_tts_")
     with open(path, "wb") as f:
         f.write(r.content)
-    audio.play(path)
+    return path
 
 
-def _openai(text: str, s: Settings):
+def _openai(text: str, s: Settings) -> str:
     from openai import OpenAI
     client = OpenAI(api_key=s.openai_api_key)
     path = tempfile.mktemp(suffix=".mp3", prefix="tars_tts_")
     with client.audio.speech.with_streaming_response.create(
             model="gpt-4o-mini-tts", voice="onyx", input=text) as resp:
         resp.stream_to_file(path)
-    audio.play(path)
+    return path
 
 
-def _espeak(text: str, s: Settings):
+def _espeak(text: str, s: Settings) -> str | None:
     exe = shutil.which("espeak-ng") or shutil.which("espeak")
     if not exe:
-        log.warning("espeak not installed; cannot speak: %r", text)
-        return
-    subprocess.run([exe, "-v", s.language, "-p", "20", "-s", "150", text], check=False)
+        return None
+    path = tempfile.mktemp(suffix=".wav", prefix="tars_tts_")
+    subprocess.run([exe, "-v", s.language, "-p", "20", "-s", "150",
+                    "-w", path, text], check=False)
+    return path

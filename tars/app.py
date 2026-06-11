@@ -13,11 +13,13 @@ import threading
 
 from . import skills
 from .config import settings
+from .knowledge import KnowledgeGraph
 from .llm import Brain
 from .memory import Memory
 from .movement import ServoDriver, Gaits
 from .movement import gamepad
 from .scheduler import Scheduler
+from .speakerid import SpeakerID
 from .speech import Speaker
 from .voice import VoiceLoop
 
@@ -62,11 +64,16 @@ def main():
     speaker = Speaker(settings)
     memory = Memory(settings)
 
+    knowledge = KnowledgeGraph()
+    speaker_id = SpeakerID()
     ctx = skills.SkillContext(settings=settings, memory=memory, gaits=gaits,
-                              scheduler=scheduler, speaker=speaker)
+                              scheduler=scheduler, speaker=speaker,
+                              extras={"knowledge": knowledge,
+                                      "speaker_id": speaker_id})
     skills.load_skills()
     brain = Brain(settings, memory, ctx)
-    voice = VoiceLoop(settings, brain, speaker)
+    voice = VoiceLoop(settings, brain, speaker,
+                      speaker_id=speaker_id if speaker_id.available else None)
 
     scheduler.every(60, battery_watchdog(speaker))
 

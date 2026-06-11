@@ -18,10 +18,12 @@ log = logging.getLogger("tars.voice")
 
 
 class VoiceLoop:
-    def __init__(self, s: Settings, brain: Brain, speaker: Speaker):
+    def __init__(self, s: Settings, brain: Brain, speaker: Speaker,
+                 speaker_id=None):
         self.s = s
         self.brain = brain
         self.speaker = speaker
+        self.speaker_id = speaker_id  # optional SpeakerID instance
         self.running = False
         self.state = "off"  # off | waiting | listening | thinking | speaking
         self._thread = None
@@ -89,9 +91,11 @@ class VoiceLoop:
             text = stt.transcribe(wav, self.s)
             if not text:
                 return
-            log.info("Heard: %s", text)
+            who = self.speaker_id.identify(wav) if self.speaker_id else None
+            log.info("Heard%s: %s", f" ({who})" if who else "", text)
             self.state = "speaking"
-            reply = self.speaker.speak_stream(self.brain.chat_stream(text))
+            reply = self.speaker.speak_stream(
+                self.brain.chat_stream(text, speaker=who))
             self.speaker.wait()
             log.info("Replied: %s", reply)
         finally:

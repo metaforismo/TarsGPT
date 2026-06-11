@@ -35,6 +35,10 @@ class Settings:
     # --- Web ---
     web_host: str = os.environ.get("TARS_WEB_HOST", "0.0.0.0")
     web_port: int = int(os.environ.get("TARS_WEB_PORT", "8000"))
+    # --- Integrations ---
+    ha_url: str = os.environ.get("HA_URL", "")
+    ha_token: str = os.environ.get("HA_TOKEN", "")
+    music_dir: str = os.environ.get("TARS_MUSIC_DIR", str(DATA_DIR / "music"))
     # --- Hardware ---
     sim_mode: bool = os.environ.get("TARS_SIM", "") == "1"
     pwm_frequency: int = 60
@@ -79,8 +83,8 @@ class Settings:
 
     def public(self):
         d = asdict(self)
-        d.pop("openai_api_key", None)
-        d.pop("elevenlabs_api_key", None)
+        for secret in ("openai_api_key", "elevenlabs_api_key", "ha_token"):
+            d.pop(secret, None)
         return d
 
 

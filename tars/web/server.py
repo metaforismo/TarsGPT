@@ -1,10 +1,16 @@
-"""Web dashboard: streaming chat, body control, personality tuning, vitals."""
+"""Web dashboard: streaming chat, browser voice mode, body control,
+personality tuning, knowledge inspector and vitals."""
 import json
 import logging
+import os
+import shutil
+import subprocess
+import tempfile
 import threading
 from pathlib import Path
-from flask import Flask, Response, jsonify, request, send_from_directory
+from flask import Flask, Response, jsonify, request, send_file, send_from_directory
 
+from .. import stt, tts
 from ..config import Settings
 from ..llm import Brain
 from ..skills.system import read_battery, read_cpu_temp, battery_percent
@@ -12,6 +18,17 @@ from ..voice import VoiceLoop
 
 log = logging.getLogger("tars.web")
 STATIC = Path(__file__).parent / "static"
+
+
+def _to_wav(path: str) -> str | None:
+    """Convert browser audio (webm/ogg) to 16 kHz mono wav for offline STT."""
+    if not shutil.which("ffmpeg"):
+        return None
+    out = tempfile.mktemp(suffix=".wav", prefix="tars_web_")
+    result = subprocess.run(
+        ["ffmpeg", "-y", "-loglevel", "error", "-i", path,
+         "-ar", "16000", "-ac", "1", out], capture_output=True)
+    return out if result.returncode == 0 else None
 
 
 def create_app(s: Settings, brain: Brain, gaits, voice: VoiceLoop) -> Flask:
@@ -84,6 +101,56 @@ def create_app(s: Settings, brain: Brain, gaits, voice: VoiceLoop) -> Flask:
         notes = [{k: v for k, v in n.items() if k != "emb"}
                  for n in brain.memory.notes[-50:]]
         return jsonify(notes=notes, turns=brain.memory.turns[-20:])
+
+    @app.get("/api/knowledge")
+    def knowledge():
+        kg = brain.ctx.extras.get("knowledge")
+        return jsonify(triples=kg.triples[-100:] if kg else [])
+
+    @app.post("/api/voice/chat")
+    def browser_voice_chat():
+        """Browser voice mode: audio blob in, transcript + reply out."""
+        upload = request.files.get("audio")
+        if upload is None:
+            return jsonify(error="no audio file"), 400
+        suffix = Path(upload.filename or "clip.webm").suffix or ".webm"
+        raw = tempfile.mktemp(suffix=suffix, prefix="tars_web_")
+        upload.save(raw)
+        wav = None
+        try:
+            # OpenAI Whisper accepts webm directly; Vosk needs 16k wav
+            engine = s.stt_engine
+            if engine == "auto":
+                engine = "openai" if s.openai_api_key else "vosk"
+            source = raw
+            if engine == "vosk" and suffix != ".wav":
+                wav = _to_wav(raw)
+                if wav is None:
+                    return jsonify(error="offline STT needs ffmpeg for browser audio"), 503
+                source = wav
+            heard = stt.transcribe(source, s)
+            if not heard:
+                return jsonify(error="could not understand the audio"), 422
+            return jsonify(heard=heard, reply=brain.chat(heard))
+        except Exception as e:
+            log.exception("browser voice chat failed")
+            return jsonify(error=str(e)), 500
+        finally:
+            for p in (raw, wav):
+                if p and os.path.exists(p):
+                    os.unlink(p)
+
+    @app.post("/api/tts")
+    def tts_endpoint():
+        """Synthesize text and return the audio file (for browser playback)."""
+        text = (request.json or {}).get("text", "").strip()
+        if not text:
+            return jsonify(error="empty text"), 400
+        path = tts.synthesize(text[:600], s)
+        if path is None:
+            return jsonify(error="no TTS engine available"), 503
+        mime = "audio/wav" if path.endswith(".wav") else "audio/mpeg"
+        return send_file(path, mimetype=mime)
 
     @app.post("/api/voice/<cmd>")
     def voice_cmd(cmd):

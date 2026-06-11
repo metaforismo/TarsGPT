@@ -32,19 +32,28 @@ class Brain:
             self._client = OpenAI(api_key=self.s.openai_api_key)
         return self._client
 
-    def chat(self, user_text: str) -> str:
-        return "".join(self.chat_stream(user_text))
+    def chat(self, user_text: str, speaker: str | None = None) -> str:
+        return "".join(self.chat_stream(user_text, speaker=speaker))
 
-    def chat_stream(self, user_text: str):
-        """Yield reply text chunks; runs skill calls transparently in between."""
+    def chat_stream(self, user_text: str, speaker: str | None = None):
+        """Yield reply text chunks; runs skill calls transparently in between.
+        speaker: optional identified speaker name (prefixed into the context)."""
         if not self.s.openai_api_key:
             yield "My cognitive core is offline: no OPENAI_API_KEY configured."
             return
 
         messages = [{"role": "system", "content": system_prompt(self.s)}]
+        kg = self.ctx.extras.get("knowledge")
+        if kg is not None:
+            facts = kg.search(user_text)
+            if facts:
+                messages.append({"role": "system",
+                                 "content": "Known facts possibly relevant now:\n"
+                                            + kg.render(facts)})
         messages += self.memory.context_messages(query=user_text)
-        messages.append({"role": "user", "content": user_text})
-        self.memory.add_turn("user", user_text)
+        user_content = f"[{speaker} is speaking] {user_text}" if speaker else user_text
+        messages.append({"role": "user", "content": user_content})
+        self.memory.add_turn("user", user_content)
 
         reply_parts = []
         try:

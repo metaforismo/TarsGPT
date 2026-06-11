@@ -7,7 +7,7 @@ cd "$(dirname "$0")"
 echo "==> Installing system packages"
 sudo apt-get update
 sudo apt-get install -y python3-venv python3-dev portaudio19-dev \
-    espeak-ng mpg123 alsa-utils i2c-tools
+    espeak-ng mpv alsa-utils i2c-tools ffmpeg
 
 echo "==> Creating virtualenv"
 python3 -m venv .venv

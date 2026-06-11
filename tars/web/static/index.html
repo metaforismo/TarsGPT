@@ -57,7 +57,10 @@
       <button onclick="voice('start')">Wake on</button>
       <button onclick="voice('stop')">Off</button>
       <button onclick="voice('ptt')">🎤 Talk</button>
+      <button class="wide" id="micBtn" onclick="browserMic()">🎙 Browser mic</button>
     </div>
+    <h2>Knowledge</h2>
+    <div id="facts" style="font-size:12px;color:#8b96a3;max-height:140px;overflow-y:auto"></div>
     <h2>Personality</h2>
     <label>Humor <span id="humorVal"></span></label>
     <input type="range" id="humor" min="0" max="100" onchange="saveSettings()">
@@ -121,6 +124,55 @@ async function move(action) {
 }
 async function voice(cmd) { await fetch('/api/voice/' + cmd, {method:'POST'}); }
 
+let rec = null;
+async function browserMic() {
+  const btn = document.getElementById('micBtn');
+  if (rec) { rec.stop(); return; }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+    rec = new MediaRecorder(stream);
+    const parts = [];
+    rec.ondataavailable = e => parts.push(e.data);
+    rec.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      rec = null;
+      btn.textContent = '🎙 Browser mic';
+      const form = new FormData();
+      form.append('audio', new Blob(parts, {type: 'audio/webm'}), 'clip.webm');
+      const pending = add('tars', '…');
+      try {
+        const r = await fetch('/api/voice/chat', {method: 'POST', body: form});
+        const data = await r.json();
+        if (data.error) { pending.textContent = '⚠ ' + data.error; return; }
+        pending.before(Object.assign(document.createElement('div'),
+          {className: 'msg user', textContent: data.heard}));
+        pending.textContent = data.reply;
+        speakInBrowser(data.reply);
+      } catch (e) { pending.textContent = 'Connection error: ' + e; }
+      chat.scrollTop = chat.scrollHeight;
+    };
+    rec.start();
+    btn.textContent = '⏹ Stop & send';
+  } catch (e) { alert('Microphone unavailable: ' + e); }
+}
+
+async function speakInBrowser(text) {
+  try {
+    const r = await fetch('/api/tts', {method:'POST', headers:{'Content-Type':'application/json'},
+                                       body: JSON.stringify({text})});
+    if (!r.ok) return;
+    new Audio(URL.createObjectURL(await r.blob())).play();
+  } catch {}
+}
+
+async function loadFacts() {
+  try {
+    const data = await (await fetch('/api/knowledge')).json();
+    document.getElementById('facts').innerHTML = (data.triples || []).slice(-15).reverse()
+      .map(t => `• ${t.s} <i>${t.r}</i> ${t.o}`).join('<br>') || '(none yet)';
+  } catch {}
+}
+
 async function loadSettings() {
   const s = await (await fetch('/api/settings')).json();
   document.getElementById('name').textContent = s.robot_name;
@@ -147,7 +199,8 @@ async function poll() {
     document.getElementById('status').textContent = line;
   } catch { document.getElementById('status').textContent = 'offline'; }
 }
-loadSettings(); poll(); setInterval(poll, 3000);
+loadSettings(); poll(); loadFacts();
+setInterval(poll, 3000); setInterval(loadFacts, 10000);
 </script>
 </body>
 </html>
