@@ -1,13 +1,17 @@
 name: Release
 
-# One-click releases: Actions tab -> Release -> Run workflow -> version.
-# Creates the tag and the GitHub Release with notes taken from CHANGELOG.md.
+# Fully automatic releases: when a version bump lands on main, the matching
+# tag + GitHub Release are created with notes from CHANGELOG.md (skipped if
+# the release already exists). Manual dispatch remains available.
 on:
+  push:
+    branches: [main]
+    paths: ["tars/__init__.py"]
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to release (e.g. 1.8.0) - must match a CHANGELOG section"
-        required: true
+        description: "Version to release (defaults to the package version)"
+        required: false
 
 permissions:
   contents: write
@@ -17,20 +21,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Verify the version matches the package
+      - name: Resolve version
+        id: ver
         run: |
-          grep -q "__version__ = \"${{ inputs.version }}\"" tars/__init__.py \
-            || { echo "tars/__init__.py is not at ${{ inputs.version }}"; exit 1; }
-      - name: Extract changelog section
-        run: |
-          awk '/^## ${{ inputs.version }} /{flag=1; next} /^## /{flag=0} flag' CHANGELOG.md > notes.md
-          test -s notes.md || { echo "No CHANGELOG section for ${{ inputs.version }}"; exit 1; }
-          cat notes.md
-      - name: Create tag and release
+          VERSION="${{ inputs.version }}"
+          if [ -z "$VERSION" ]; then
+            VERSION=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' tars/__init__.py)
+          fi
+          test -n "$VERSION" || { echo "cannot determine version"; exit 1; }
+          grep -q "__version__ = \"$VERSION\"" tars/__init__.py \
+            || { echo "tars/__init__.py is not at $VERSION"; exit 1; }
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Skip if the release already exists
+        id: exists
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v${{ inputs.version }}" \
+          if gh release view "v${{ steps.ver.outputs.version }}" >/dev/null 2>&1; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "v${{ steps.ver.outputs.version }} already released - nothing to do."
+          fi
+      - name: Extract changelog section
+        if: steps.exists.outputs.skip != 'true'
+        run: |
+          awk -v ver="${{ steps.ver.outputs.version }}" \
+            '$0 ~ "^## " ver " " {flag=1; next} /^## /{flag=0} flag' CHANGELOG.md > notes.md
+          test -s notes.md || { echo "No CHANGELOG section for ${{ steps.ver.outputs.version }}"; exit 1; }
+          cat notes.md
+      - name: Create tag and release
+        if: steps.exists.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ steps.ver.outputs.version }}" \
             --target "${{ github.sha }}" \
-            --title "TarsGPT ${{ inputs.version }}" \
+            --title "TarsGPT ${{ steps.ver.outputs.version }}" \
             --notes-file notes.md
