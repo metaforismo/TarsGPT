@@ -17,52 +17,52 @@
 
 | # | Item | Qty | Notes |
 |---|---|---|---|
-| 1 | **Raspberry Pi 5** — 8 GB recommended (4 GB minimum) | 1 | The brain. The Pi 5 is required for the V3 software stack; a Pi 4 4GB+ works with the latishab fork |
-| 2 | **Raspberry Pi 5 Active Cooler** (official) | 1 | The Pi 5 throttles without it |
-| 3 | **MicroSD card 32–64 GB** (A2, e.g. SanDisk Extreme) | 1 | For Raspberry Pi OS 64-bit |
-| 4 | **12V Li-ion rechargeable battery pack ~3000 mAh + charger** | 1 | Main power source |
-| 5 | **XL4015E DC 5A adjustable buck converter** | 1 | Steps 12V down for the servos — set output to **6.2V** |
-| 6 | **DC 6A USB voltage regulator** (12V→5V USB) | 1 | Powers the Raspberry Pi |
-| 7 | **Micro rocker switch** | 1 | Main power switch |
-| 8 | **USB-C cable or USB-C male breakout board** | 1 | Pi power input (choose one) |
+| 1 | **Raspberry Pi 5** — 8 GB recommended (4 GB minimum) | 1 | The brain. The Pi 5 is required for the V3 software stack; a Pi 4 4GB+ works with the latishab fork · [Buy](https://www.raspberrypi.com/products/raspberry-pi-5/) |
+| 2 | **Raspberry Pi 5 Active Cooler** (official) | 1 | The Pi 5 throttles without it · [Buy](https://www.raspberrypi.com/products/active-cooler/) |
+| 3 | **MicroSD card 32–64 GB** (A2, e.g. SanDisk Extreme) | 1 | For Raspberry Pi OS 64-bit · [Buy](https://www.amazon.com/s?k=sandisk+extreme+64gb+microsd+a2) |
+| 4 | **12V Li-ion rechargeable battery pack ~3000 mAh + charger** | 1 | Main power source · [Buy](https://www.aliexpress.com/w/wholesale-12v-li-ion-battery-pack-3000mah.html) |
+| 5 | **XL4015E DC 5A adjustable buck converter** | 1 | Steps 12V down for the servos — set output to **6.2V** · [Buy](https://www.aliexpress.com/w/wholesale-XL4015-buck-converter.html) |
+| 6 | **DC 6A USB voltage regulator** (12V→5V USB) | 1 | Powers the Raspberry Pi · [Buy](https://www.aliexpress.com/w/wholesale-12v-to-5v-6a-usb-step-down.html) |
+| 7 | **Micro rocker switch** | 1 | Main power switch · [Buy](https://www.aliexpress.com/w/wholesale-micro-rocker-switch.html) |
+| 8 | **USB-C cable or USB-C male breakout board** | 1 | Pi power input (choose one) · [Buy](https://www.aliexpress.com/w/wholesale-usb-c-male-breakout-board.html) |
 
 ## 2. Motion (servos & control)
 
 | # | Item | Qty | Notes |
 |---|---|---|---|
-| 9 | **PCA9685 16-channel PWM/servo driver** | 1 | I2C servo controller (Adafruit or clone) |
-| 10 | **MG996R metal-gear servos** | 4 (6 with arms) | Legs/torso. Buy 1–2 spares — cheap clones vary in quality |
-| 11 | **MG90S micro servos** | 4 | Arms version only |
-| 12 | **12" (30 cm) servo extension cables** | 6 | Arms version only |
-| 13 | **Dupont cables female-female, 40 cm** | 8 | I2C + power wiring |
-| 14 | **20 AWG 2-conductor parallel wire** | ~2 m | Power distribution |
+| 9 | **PCA9685 16-channel PWM/servo driver** | 1 | I2C servo controller (Adafruit or clone) · [Buy](https://www.adafruit.com/product/815) |
+| 10 | **MG996R metal-gear servos** | 4 (6 with arms) | Legs/torso. Buy 1–2 spares — cheap clones vary in quality · [Buy](https://www.aliexpress.com/w/wholesale-MG996R-servo.html) |
+| 11 | **MG90S micro servos** | 4 | Arms version only · [Buy](https://www.aliexpress.com/w/wholesale-MG90S-servo.html) |
+| 12 | **12" (30 cm) servo extension cables** | 6 | Arms version only · [Buy](https://www.aliexpress.com/w/wholesale-servo-extension-cable-30cm.html) |
+| 13 | **Dupont cables female-female, 40 cm** | 8 | I2C + power wiring · [Buy](https://www.aliexpress.com/w/wholesale-dupont-cable-female-female-40cm.html) |
+| 14 | **20 AWG 2-conductor parallel wire** | ~2 m | Power distribution · [Buy](https://www.aliexpress.com/w/wholesale-20awg-2-conductor-wire.html) |
 
-> 💪 **Upgrade option:** the TARS-WIZARD build uses 3× **LewanSoul LD-3015MG** (17 kg·cm) high-torque servos instead of MG996R — stronger and smoother walking, slightly more expensive.
+> 💪 **Upgrade option:** the TARS-WIZARD build uses 3× **LewanSoul LD-3015MG** (17 kg·cm, [Buy](https://www.aliexpress.com/item/32787763122.html)) high-torque servos instead of MG996R — stronger and smoother walking, slightly more expensive.
 >
-> 🧭 **Optional sensor:** an **MPU-6050 IMU** (~€3, I2C) detects orientation/falls — **supported**: with it installed, gait training penalizes falls automatically (fully unsupervised sessions).
+> 🧭 **Optional sensor:** an **MPU-6050 IMU** (~€3, I2C, [Buy](https://www.aliexpress.com/w/wholesale-MPU-6050-module.html)) detects orientation/falls — **supported**: with it installed, gait training penalizes falls automatically (fully unsupervised sessions).
 
 ## 3. Display, audio & vision
 
 | # | Item | Qty | Notes |
 |---|---|---|---|
-| 15 | **5" DSI touchscreen** — one of: UeeKKoo 1024×600, Hosyond 800×480, Waveshare 800×480 | 1 | DSI, not HDMI — it's what fits the V3 chassis |
-| 16 | **200 mm DSI ribbon cable** | 1 | Optional but makes assembly easier |
-| 17 | **OV5647 5 MP camera module** | 1 | For vision / face detection |
-| 18 | **USB sound card** | 1 | The Pi 5 has no audio jack |
-| 19 | **8 Ω 5 W speaker** | 1 | TARS's voice |
-| 20 | **USB microphone** (mini) | 1 | For voice commands / wake word |
+| 15 | **5" DSI touchscreen** — one of: UeeKKoo 1024×600, Hosyond 800×480, Waveshare 800×480 | 1 | DSI, not HDMI — it's what fits the V3 chassis · [Buy](https://www.aliexpress.com/w/wholesale-5-inch-dsi-display-raspberry-pi.html) |
+| 16 | **200 mm DSI ribbon cable** | 1 | Optional but makes assembly easier · [Buy](https://www.aliexpress.com/w/wholesale-dsi-ribbon-cable-raspberry-pi-5.html) |
+| 17 | **OV5647 5 MP camera module** | 1 | For vision / face detection · [Buy](https://www.aliexpress.com/w/wholesale-OV5647-camera-module.html) |
+| 18 | **USB sound card** | 1 | The Pi 5 has no audio jack · [Buy](https://www.aliexpress.com/w/wholesale-usb-sound-card.html) |
+| 19 | **8 Ω 5 W speaker** | 1 | TARS's voice · [Buy](https://www.aliexpress.com/w/wholesale-8ohm-5w-speaker.html) |
+| 20 | **USB microphone** (mini) | 1 | For voice commands / wake word · [Buy](https://www.aliexpress.com/w/wholesale-mini-usb-microphone.html) |
 
 ## 4. Assembly hardware
 
 | # | Item | Qty | Notes |
 |---|---|---|---|
-| 21 | **M3 screw assortment kit** (various lengths, with nuts) | 1–2 kits | Most used: M3×16 and M3×20 |
-| 22 | **10×3 mm round magnets** | 4 | Arms version — magnetic hand attachment |
-| 23 | **6" Velcro straps** | 2 | Battery mounting |
-| 24 | **Heat-shrink tubing kit** | 1 | Clean wiring |
-| 25 | **Spade connectors** | 2 | Battery/switch connections |
-| 26 | **INA260 current/voltage sensor** | 1 | *Optional* — battery level monitoring (the only part that requires soldering) |
-| 27 | **8BitDo Zero 2 Bluetooth gamepad** | 1 | *Optional* — manual driving with the code in this repo |
+| 21 | **M3 screw assortment kit** (various lengths, with nuts) | 1–2 kits | Most used: M3×16 and M3×20 · [Buy](https://www.aliexpress.com/w/wholesale-m3-screw-assortment-kit.html) |
+| 22 | **10×3 mm round magnets** | 4 | Arms version — magnetic hand attachment · [Buy](https://www.aliexpress.com/w/wholesale-neodymium-magnet-10x3mm.html) |
+| 23 | **6" Velcro straps** | 2 | Battery mounting · [Buy](https://www.amazon.com/s?k=velcro+straps+6+inch) |
+| 24 | **Heat-shrink tubing kit** | 1 | Clean wiring · [Buy](https://www.aliexpress.com/w/wholesale-heat-shrink-tubing-kit.html) |
+| 25 | **Spade connectors** | 2 | Battery/switch connections · [Buy](https://www.aliexpress.com/w/wholesale-spade-connectors.html) |
+| 26 | **INA260 current/voltage sensor** | 1 | *Optional* — battery level monitoring (the only part that requires soldering) · [Buy](https://www.adafruit.com/product/4226) |
+| 27 | **8BitDo Zero 2 Bluetooth gamepad** | 1 | *Optional* — manual driving with the code in this repo · [Buy](https://www.aliexpress.com/item/1005006458561670.html) |
 
 ## 5. The 3D printer — which Bambu Lab to buy
 
