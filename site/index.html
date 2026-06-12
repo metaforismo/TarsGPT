@@ -3,203 +3,304 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TarsGPT — Build your own TARS from Interstellar</title>
-<meta name="description" content="An open-source, AI-powered TARS replica: voice, personality, gait learning with verifiable rewards, and a balance-first no-arms design. Based on Charlie Diaz's original TARS concept.">
+<title>TARSGPT — Build your own TARS from Interstellar</title>
+<meta name="description" content="An open-source, AI-powered TARS replica: voice, personality, gait learning with verifiable rewards, balance-first no-arms design. Based on Charlie Diaz's original TARS concept.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#05070a; --panel:#0d1117; --line:#1d2733; --fg:#d7dde4; --dim:#8b96a3; --acc:#62d0ff; }
+  :root {
+    --bg:#0a0b0d; --ink:#ececea; --dim:#9a9da3; --faint:#5b5e64;
+    --line:#1e2024; --panel:#101216; --amber:#e8b54a; --green:#39e16e;
+  }
   * { box-sizing:border-box; margin:0; }
   html { scroll-behavior:smooth; }
-  body { background:var(--bg); color:var(--fg); font:16px/1.65 "Segoe UI", system-ui, sans-serif; }
-  a { color:var(--acc); text-decoration:none; }
-  a:hover { text-decoration:underline; }
-  .wrap { max-width:1100px; margin:0 auto; padding:0 24px; }
-  nav { position:sticky; top:0; z-index:10; background:rgba(5,7,10,.85); backdrop-filter:blur(8px);
-        border-bottom:1px solid var(--line); }
-  nav .wrap { display:flex; align-items:center; gap:22px; height:58px; }
-  nav .logo { font-weight:700; letter-spacing:3px; color:var(--fg); }
-  nav .links { margin-left:auto; display:flex; gap:18px; font-size:14px; }
-  nav .links a { color:var(--dim); } nav .links a:hover { color:var(--acc); text-decoration:none; }
+  ::selection { background:var(--amber); color:#1a1206; }
+  body { background:var(--bg); color:var(--ink);
+         font:16px/1.7 "Inter", system-ui, sans-serif;
+         -webkit-font-smoothing:antialiased; }
+  a { color:inherit; text-decoration:none; }
+  h1,h2,h3 { font-family:"Space Grotesk", sans-serif; font-weight:700; letter-spacing:-0.01em; }
+  .mono { font-family:"JetBrains Mono", monospace; }
+  .wrap { max-width:1140px; margin:0 auto; padding:0 28px; }
 
-  header.hero { padding:90px 0 60px; text-align:center;
-    background:radial-gradient(ellipse 80% 60% at 50% 0%, #0c1622 0%, var(--bg) 70%); }
-  .hero h1 { font-size:clamp(42px,8vw,84px); letter-spacing:.18em; font-weight:800; }
-  .hero h1 span { color:var(--acc); text-shadow:0 0 30px rgba(98,208,255,.45); }
-  .hero p.tag { color:var(--dim); max-width:620px; margin:18px auto 0; font-size:18px; }
-  .cta { margin-top:34px; display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
-  .btn { display:inline-block; padding:12px 22px; border-radius:10px; border:1px solid var(--line);
-         background:var(--panel); color:var(--fg); font-weight:600; }
-  .btn.primary { background:var(--acc); color:#04121c; border-color:var(--acc); }
-  .btn:hover { text-decoration:none; border-color:var(--acc); }
-  .hero .quote { margin-top:42px; color:#3e7d93; font-style:italic; font-size:14px; }
+  /* film grain */
+  body::after { content:""; position:fixed; inset:0; pointer-events:none; z-index:50; opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E"); }
 
-  section { padding:70px 0; border-top:1px solid var(--line); }
-  h2 { font-size:30px; margin-bottom:8px; }
-  .sub { color:var(--dim); margin-bottom:34px; max-width:720px; }
+  /* ---------- nav ---------- */
+  nav { position:fixed; inset:0 0 auto; z-index:20; }
+  nav .wrap { display:flex; align-items:center; height:72px; }
+  nav .logo { font-family:"Space Grotesk"; font-weight:700; letter-spacing:.28em; font-size:15px; }
+  nav .logo b { color:var(--amber); }
+  nav .links { margin-left:auto; display:flex; gap:28px; font-size:13px; letter-spacing:.08em;
+               text-transform:uppercase; font-family:"JetBrains Mono", monospace; }
+  nav .links a { color:var(--dim); transition:color .2s; }
+  nav .links a:hover { color:var(--ink); }
+  nav.scrolled { background:rgba(10,11,13,.82); backdrop-filter:blur(10px);
+                 border-bottom:1px solid var(--line); }
 
-  /* 3D viewer */
-  #viewerSection .layout { display:grid; grid-template-columns:1fr 280px; gap:18px; }
-  #stage { position:relative; height:560px; background:#070b10; border:1px solid var(--line);
-           border-radius:14px; overflow:hidden; }
+  /* ---------- hero = the 3D stage ---------- */
+  #viewer { position:relative; height:100svh; min-height:620px; }
+  #stage { position:absolute; inset:0; }
   #stage canvas { display:block; }
-  #tooltip { position:absolute; pointer-events:none; background:rgba(7,12,18,.92);
-             border:1px solid var(--acc); border-radius:8px; padding:6px 10px; font-size:13px;
-             color:var(--acc); display:none; z-index:5; white-space:nowrap; }
-  #controls { position:absolute; left:14px; bottom:14px; right:14px; display:flex; gap:14px;
-              align-items:center; background:rgba(7,12,18,.85); border:1px solid var(--line);
-              border-radius:10px; padding:10px 14px; font-size:13px; color:var(--dim); z-index:4;
-              flex-wrap:wrap; }
-  #controls input[type=range] { flex:1; min-width:120px; accent-color:var(--acc); }
-  #controls label { display:flex; gap:6px; align-items:center; cursor:pointer; }
-  #partsPanel { background:var(--panel); border:1px solid var(--line); border-radius:14px;
-                padding:16px; max-height:560px; overflow-y:auto; }
-  #partsPanel h3 { font-size:13px; text-transform:uppercase; letter-spacing:2px; color:var(--dim);
-                   margin-bottom:10px; }
-  #partsList li { list-style:none; padding:7px 10px; border-radius:8px; font-size:14px;
-                  cursor:pointer; color:var(--dim); }
-  #partsList li:hover { color:var(--fg); background:#121a24; }
-  #partsList li.active { color:var(--acc); background:#0d1f2c; }
-  #partDesc { margin-top:12px; padding-top:12px; border-top:1px solid var(--line); font-size:13px;
-              color:var(--dim); min-height:64px; }
-  #partDesc b { color:var(--fg); }
-  .hint { color:#3e7d93; font-size:12px; margin-top:10px; }
+  #viewer .vignette { position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse 90% 70% at 50% 45%, transparent 55%, rgba(10,11,13,.85) 100%); }
+  .heroCopy { position:absolute; left:0; right:0; bottom:110px; pointer-events:none; z-index:6;
+              transition:opacity .35s; }
+  #viewer.focused .heroCopy { opacity:0; }
+  .heroCopy .wrap { pointer-events:none; }
+  .heroCopy .eyebrow { font-family:"JetBrains Mono"; font-size:12px; letter-spacing:.32em;
+    text-transform:uppercase; color:var(--amber); margin-bottom:18px; }
+  .heroCopy h1 { font-size:clamp(40px,6.4vw,76px); line-height:1.04; max-width:11ch; }
+  .heroCopy p { color:var(--dim); max-width:46ch; margin-top:18px; font-size:17px; }
+  .heroCopy .cta { margin-top:28px; display:flex; gap:12px; flex-wrap:wrap; pointer-events:auto; }
+  .btn { display:inline-flex; align-items:center; gap:10px; padding:13px 22px; border-radius:999px;
+         font-family:"JetBrains Mono"; font-size:13px; letter-spacing:.06em; cursor:pointer;
+         border:1px solid var(--line); background:rgba(16,18,22,.7); color:var(--ink);
+         backdrop-filter:blur(6px); transition:border-color .2s, transform .15s; }
+  .btn:hover { border-color:var(--amber); transform:translateY(-1px); }
+  .btn.primary { background:var(--amber); border-color:var(--amber); color:#1a1206; font-weight:500; }
 
-  /* features */
-  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:16px; }
-  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px; }
-  .card h3 { font-size:17px; margin-bottom:6px; }
-  .card p { color:var(--dim); font-size:14px; }
-  .card .em { font-size:22px; }
+  #tooltip { position:absolute; pointer-events:none; z-index:8; display:none;
+    background:rgba(10,12,15,.92); border:1px solid var(--amber); border-radius:6px;
+    padding:5px 10px; font:12px "JetBrains Mono"; color:var(--amber); white-space:nowrap; }
 
-  /* docs cards */
-  .doc { display:block; }
-  .doc:hover { border-color:var(--acc); text-decoration:none; }
-  .doc small { color:#3e7d93; }
+  /* viewer controls */
+  #hud { position:absolute; right:28px; bottom:110px; z-index:7; display:flex; flex-direction:column;
+         gap:10px; align-items:flex-end; }
+  .hudRow { display:flex; gap:10px; align-items:center; background:rgba(13,15,18,.78);
+            border:1px solid var(--line); border-radius:12px; padding:10px 14px;
+            backdrop-filter:blur(8px); font:12px "JetBrains Mono"; color:var(--dim); }
+  .hudRow input[type=range] { width:170px; accent-color:var(--amber); }
+  .hudRow button { all:unset; cursor:pointer; color:var(--dim); padding:2px 6px; }
+  .hudRow button:hover { color:var(--amber); }
 
-  pre { background:#070b10; border:1px solid var(--line); border-radius:10px; padding:16px;
-        overflow-x:auto; font-size:13.5px; color:#9fd8ef; }
+  #partsDrawer { position:absolute; top:92px; right:28px; bottom:200px; width:264px; z-index:7;
+    background:rgba(13,15,18,.86); border:1px solid var(--line); border-radius:14px;
+    backdrop-filter:blur(10px); padding:18px 8px 18px 18px; transform:translateX(calc(100% + 40px));
+    transition:transform .35s cubic-bezier(.2,.8,.2,1); display:flex; flex-direction:column; }
+  #partsDrawer.open { transform:none; }
+  #partsDrawer h3 { font:12px "JetBrains Mono"; letter-spacing:.3em; color:var(--faint);
+                    text-transform:uppercase; margin-bottom:12px; }
+  #partsList { overflow-y:auto; padding-right:8px; }
+  #partsList li { list-style:none; padding:7px 9px; border-radius:8px; font-size:13.5px;
+                  color:var(--dim); cursor:pointer; display:flex; gap:10px; }
+  #partsList li span { font-family:"JetBrains Mono"; font-size:11px; color:var(--faint); padding-top:2px; }
+  #partsList li:hover { color:var(--ink); background:rgba(255,255,255,.04); }
+  #partsList li.active { color:var(--amber); background:rgba(232,181,74,.08); }
+  #partsList li.active span { color:var(--amber); }
 
-  footer { border-top:1px solid var(--line); padding:44px 0 60px; color:var(--dim); font-size:14px; }
-  footer .wrap { display:grid; gap:8px; }
+  #partCard { position:absolute; left:28px; top:50%; transform:translateY(-50%) translateX(-16px);
+    width:300px; z-index:7; background:rgba(13,15,18,.9); border:1px solid var(--line);
+    border-left:2px solid var(--amber); border-radius:12px; padding:18px 20px;
+    backdrop-filter:blur(10px); opacity:0; pointer-events:none; transition:all .3s; }
+  #partCard.show { opacity:1; transform:translateY(-50%); }
+  #partCard b { font-family:"Space Grotesk"; font-size:17px; }
+  #partCard p { color:var(--dim); font-size:13.5px; margin-top:8px; line-height:1.6; }
+
+  .scrollHint { position:absolute; left:50%; bottom:26px; transform:translateX(-50%); z-index:6;
+    font:11px "JetBrains Mono"; letter-spacing:.3em; color:var(--faint); text-transform:uppercase;
+    animation:bob 2.4s ease-in-out infinite; }
+  @keyframes bob { 50% { transform:translateX(-50%) translateY(6px); } }
+
+  /* stats strip */
+  .stats { border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .stats .wrap { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); }
+  .stat { padding:26px 18px; border-left:1px solid var(--line); }
+  .stat:first-child { border-left:none; }
+  .stat b { font-family:"Space Grotesk"; font-size:26px; display:block; }
+  .stat span { font:11px "JetBrains Mono"; letter-spacing:.18em; text-transform:uppercase; color:var(--faint); }
+
+  /* ---------- sections ---------- */
+  section { padding:110px 0; }
+  .secHead { display:flex; align-items:baseline; gap:18px; margin-bottom:14px; }
+  .secHead .idx { font:13px "JetBrains Mono"; color:var(--amber); letter-spacing:.2em; }
+  .secHead h2 { font-size:clamp(28px,3.6vw,44px); }
+  .lede { color:var(--dim); max-width:62ch; margin-bottom:54px; font-size:17px; }
+  .lede a, .credits a { color:var(--amber); }
+  .lede a:hover, .credits a:hover { text-decoration:underline; }
+
+  .featList { border-top:1px solid var(--line); }
+  .feat { display:grid; grid-template-columns:64px 280px 1fr; gap:18px; padding:26px 0;
+          border-bottom:1px solid var(--line); align-items:baseline; }
+  .feat .n { font:13px "JetBrains Mono"; color:var(--faint); }
+  .feat h3 { font-size:18px; font-weight:500; }
+  .feat p { color:var(--dim); font-size:15px; }
+  .feat code { font-family:"JetBrains Mono"; font-size:13px; color:var(--green); }
+
+  .docGrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; }
+  .doc { display:block; background:var(--panel); border:1px solid var(--line); border-radius:14px;
+         padding:24px; transition:border-color .2s, transform .15s; }
+  .doc:hover { border-color:var(--amber); transform:translateY(-2px); }
+  .doc .k { font:11px "JetBrains Mono"; letter-spacing:.24em; color:var(--amber);
+            text-transform:uppercase; }
+  .doc h3 { margin:10px 0 6px; font-size:18px; }
+  .doc p { color:var(--dim); font-size:14px; }
+
+  .term { background:#050807; border:1px solid #15301f; border-radius:14px; padding:26px 28px;
+          font:14px/1.9 "JetBrains Mono"; color:var(--green); overflow-x:auto;
+          box-shadow:0 0 60px rgba(57,225,110,.05) inset; }
+  .term .c { color:#2c6e44; }
+
+  .credits { color:var(--dim); max-width:70ch; font-size:16px; line-height:1.85; }
+  .credits b { color:var(--ink); }
+
+  footer { border-top:1px solid var(--line); padding:48px 0 64px; }
+  footer .wrap { display:flex; justify-content:space-between; gap:18px; flex-wrap:wrap;
+                 font:12px "JetBrains Mono"; color:var(--faint); letter-spacing:.08em; }
+
+  .reveal { opacity:0; transform:translateY(26px); transition:opacity .7s, transform .7s; }
+  .reveal.in { opacity:1; transform:none; }
 
   @media (max-width:860px) {
-    #viewerSection .layout { grid-template-columns:1fr; }
-    #stage { height:62vh; }
-    #partsPanel { max-height:260px; }
+    .feat { grid-template-columns:40px 1fr; }
+    .feat p { grid-column:2; }
+    #partCard { left:16px; right:16px; width:auto; top:auto; bottom:190px; transform:none; }
+    #partCard.show { transform:none; }
+    #hud { right:16px; bottom:96px; }
+    #partsDrawer { right:16px; width:240px; bottom:230px; }
+    .heroCopy { bottom:190px; }
+    nav .links a:not(:last-child) { display:none; }
   }
 </style>
 </head>
 <body>
 
-<nav><div class="wrap">
-  <span class="logo">TARS<span style="color:var(--acc)">GPT</span></span>
+<nav id="nav"><div class="wrap">
+  <a class="logo" href="#">TARS<b>GPT</b></a>
   <div class="links">
-    <a href="#viewerSection">3D Model</a>
-    <a href="#features">Features</a>
-    <a href="#build">Build it</a>
-    <a href="#learn">Gait learning</a>
-    <a href="https://github.com/metaforismo/TarsGPT">GitHub</a>
+    <a href="#systems">Systems</a>
+    <a href="#build">Build</a>
+    <a href="#learning">Learning</a>
+    <a href="#origins">Origins</a>
+    <a href="https://github.com/metaforismo/TarsGPT">GitHub ↗</a>
   </div>
 </div></nav>
 
-<header class="hero">
-  <div class="wrap">
-    <h1>TARS<span>GPT</span></h1>
-    <p class="tag">Build your own TARS from <i>Interstellar</i> — an open-source robot that talks,
-      walks, keeps its balance, and <b>learns to walk better</b> with physically verifiable rewards.</p>
+<!-- ============ HERO: the robot itself ============ -->
+<div id="viewer">
+  <div id="stage"><div id="tooltip"></div></div>
+  <div class="vignette"></div>
+
+  <div class="heroCopy"><div class="wrap">
+    <div class="eyebrow">Open source · Raspberry Pi · 59 tests green</div>
+    <h1>Build your own TARS.</h1>
+    <p>A walking, talking robot from <i>Interstellar</i> — with a brain, a sense of humor,
+       and a gait it learned by itself. Drag to orbit. Take it apart.</p>
     <div class="cta">
-      <a class="btn primary" href="https://github.com/metaforismo/TarsGPT">Get the code on GitHub</a>
-      <a class="btn" href="#viewerSection">Explore the robot in 3D</a>
+      <a class="btn primary" href="https://github.com/metaforismo/TarsGPT">Get the code</a>
+      <button class="btn" id="disassembleBtn">Disassemble&nbsp;⌁</button>
     </div>
-    <p class="quote">"What's your honesty parameter?" — "Ninety percent."</p>
-  </div>
-</header>
+  </div></div>
 
-<section id="viewerSection"><div class="wrap">
-  <h2>The robot, piece by piece</h2>
-  <p class="sub">An interactive look at the build: drag to orbit, scroll to zoom, and pull the
-    <b>explode</b> slider to take TARS apart. Click any part to learn what it does.
-    This is a stylized model of the real no-arms build — the printable chassis files come from the
-    <a href="https://github.com/TARS-AI-Community/TARS-AI">TARS-AI Community</a> (CC BY-NC 4.0).</p>
-  <div class="layout">
-    <div id="stage">
-      <div id="tooltip"></div>
-      <div id="controls">
-        <span>Explode</span>
-        <input id="explode" type="range" min="0" max="100" value="0">
-        <label><input id="spin" type="checkbox" checked> auto-rotate</label>
-        <button class="btn" id="resetBtn" style="padding:5px 12px;font-size:12px">Reset</button>
-      </div>
+  <div id="hud">
+    <div class="hudRow">
+      <span>EXPLODE</span>
+      <input id="explode" type="range" min="0" max="100" value="0">
     </div>
-    <aside id="partsPanel">
-      <h3>Parts</h3>
-      <ul id="partsList"></ul>
-      <div id="partDesc">Click a part in the scene or in this list.</div>
-      <p class="hint">No arms by design: TARS doesn't need to grab anything — it needs to not fall.</p>
-    </aside>
+    <div class="hudRow">
+      <button id="partsBtn">PARTS&nbsp;LIST</button>·
+      <button id="resetBtn">RESET&nbsp;VIEW</button>
+    </div>
+  </div>
+
+  <aside id="partsDrawer">
+    <h3>Components</h3>
+    <ul id="partsList"></ul>
+  </aside>
+  <div id="partCard"></div>
+
+  <div class="scrollHint">scroll</div>
+</div>
+
+<div class="stats"><div class="wrap">
+  <div class="stat"><b>€280</b><span>entry cost, printer owned</span></div>
+  <div class="stat"><b>18</b><span>plugin skills</span></div>
+  <div class="stat"><b>18,500</b><span>gaits tried per hour, in sim</span></div>
+  <div class="stat"><b>€0<span style="font-size:15px">/mo</span></b><span>fully-local mode</span></div>
+</div></div>
+
+<!-- ============ 01 SYSTEMS ============ -->
+<section id="systems"><div class="wrap">
+  <div class="secHead reveal"><span class="idx">01</span><h2>Systems</h2></div>
+  <p class="lede reveal">One Python process on a Raspberry Pi 5. Every layer degrades gracefully —
+     from a full cloud AI stack down to 100% offline and free.</p>
+  <div class="featList">
+    <div class="feat reveal"><span class="n">/01</span><h3>Hands-free voice</h3><p>Offline wake word, a spoken "Yes?", follow-up questions without repeating the name, replies streamed sentence-by-sentence while the LLM is still thinking.</p></div>
+    <div class="feat reveal"><span class="n">/02</span><h3>Plugin skills</h3><p>Drop a decorated Python function in a folder, it becomes an LLM tool: <code>move</code>, <code>look</code>, <code>remember</code>, timers, music, Home Assistant, image generation.</p></div>
+    <div class="feat reveal"><span class="n">/03</span><h3>Personality dials</h3><p>Humor, honesty and sarcasm from 0 to 100 — adjustable by asking. Character cards switch TARS into CASE or KIPP.</p></div>
+    <div class="feat reveal"><span class="n">/04</span><h3>Balance first</h3><p>No arms, by design. An IMU fall watchdog relaxes the servos when TARS tips over, and a gyro stability tax makes smoother gaits win during training.</p></div>
+    <div class="feat reveal"><span class="n">/05</span><h3>Memory &amp; knowledge</h3><p>Semantic long-term memory plus a structured knowledge graph, injected into conversation only when relevant.</p></div>
+    <div class="feat reveal"><span class="n">/06</span><h3>Anywhere dashboard</h3><p>Streaming chat, browser voice from any phone on the LAN (HTTPS built in), movement pad, live learning curve — and a movie-style onboard readout at <code>/display</code>.</p></div>
+    <div class="feat reveal"><span class="n">/07</span><h3>Cloud or fully local</h3><p>OpenAI + ElevenLabs for the best experience, or Ollama + Piper + Vosk for a TARS that never phones home.</p></div>
+    <div class="feat reveal"><span class="n">/08</span><h3>Builder tooling</h3><p><code>tars --doctor</code> self-tests 12 subsystems with fix hints, <code>--benchmark</code> times the voice pipeline, and everything runs in simulation on a laptop.</p></div>
   </div>
 </div></section>
 
-<section id="features"><div class="wrap">
-  <h2>What it does</h2>
-  <p class="sub">A complete, tested runtime — 59 automated tests, CI on every commit — that degrades
-    gracefully from a full cloud AI stack down to 100% offline and free.</p>
-  <div class="grid">
-    <div class="card"><div class="em">🗣️</div><h3>Hands-free voice AI</h3><p>Offline wake word, follow-up conversation without repeating "TARS", streaming replies spoken sentence-by-sentence while the LLM is still thinking.</p></div>
-    <div class="card"><div class="em">🧩</div><h3>18 plugin skills</h3><p>Drop a decorated Python function in a folder and it becomes an LLM tool: move, look, remember, timers, music, Home Assistant, images…</p></div>
-    <div class="card"><div class="em">🎭</div><h3>Adjustable personality</h3><p>Humor, honesty and sarcasm dials, plus switchable character cards — TARS, CASE and KIPP included.</p></div>
-    <div class="card"><div class="em">🧬</div><h3>Gait learning</h3><p>An evolution strategy tunes the walk against verifiable rewards: centimeters on a tape measure, camera displacement, or a domain-randomized MuJoCo sim.</p></div>
-    <div class="card"><div class="em">⚖️</div><h3>Balance first</h3><p>IMU fall watchdog relaxes the servos when TARS tips over; a gyro "stability tax" makes smoother gaits win during training.</p></div>
-    <div class="card"><div class="em">🕸️</div><h3>Memory & knowledge</h3><p>Semantic long-term memory plus a structured knowledge graph, injected into conversations when relevant.</p></div>
-    <div class="card"><div class="em">📱</div><h3>Web dashboard</h3><p>Streaming chat, browser voice mode from any phone on the LAN (HTTPS built in), movement pad, live learning curve, movie-style onboard display.</p></div>
-    <div class="card"><div class="em">🖥️</div><h3>Cloud or fully local</h3><p>OpenAI + ElevenLabs for the best experience, or Ollama + Piper + Vosk for a TARS that costs €0/month and never phones home.</p></div>
-    <div class="card"><div class="em">🩺</div><h3>Builder-friendly</h3><p><code>tars --doctor</code> self-tests 12 subsystems with fix hints; <code>--benchmark</code> times the voice pipeline; everything runs in simulation on a laptop.</p></div>
-  </div>
-</div></section>
-
+<!-- ============ 02 BUILD ============ -->
 <section id="build"><div class="wrap">
-  <h2>Build it</h2>
-  <p class="sub">Raspberry Pi 5, a PCA9685 servo driver, three to six servos, ~1.5&nbsp;kg of PETG and a
-    weekend of printing. From <b>≈€280</b> if you already own a 3D printer. The docs are bilingual
-    (English &amp; Italian) and cover everything — including which Bambu Lab printer to buy and how to
-    get the brushed-metal movie finish.</p>
-  <div class="grid">
-    <a class="card doc" href="https://github.com/metaforismo/TarsGPT/blob/main/docs/en/SHOPPING_LIST.md"><h3>🛒 Shopping list</h3><p>Every part with quantities, the 3D-printer comparison, filament choices, metal-finish techniques.</p><small>docs/en/SHOPPING_LIST.md</small></a>
-    <a class="card doc" href="https://github.com/metaforismo/TarsGPT/blob/main/docs/en/COST_ESTIMATE.md"><h3>💶 Cost estimate</h3><p>Line-by-line prices (Amazon vs AliExpress), three budget scenarios, monthly running costs.</p><small>docs/en/COST_ESTIMATE.md</small></a>
-    <a class="card doc" href="https://github.com/metaforismo/TarsGPT/blob/main/docs/en/BUILD_GUIDE.md"><h3>🔧 Build guide</h3><p>Print settings, wiring (mind the 6.2&nbsp;V!), assembly order, first calibration.</p><small>docs/en/BUILD_GUIDE.md</small></a>
-    <a class="card doc" href="https://github.com/metaforismo/TarsGPT/blob/main/docs/en/SOFTWARE.md"><h3>🧠 Software manual</h3><p>Architecture, all skills, AI-stack options, HTTP API, troubleshooting.</p><small>docs/en/SOFTWARE.md</small></a>
+  <div class="secHead reveal"><span class="idx">02</span><h2>The build</h2></div>
+  <p class="lede reveal">Raspberry Pi 5, a PCA9685, three to six servos, ~1.5 kg of PETG and a weekend
+     of printing. Bilingual docs (EN/IT) cover everything — including which Bambu Lab printer to buy
+     and how to get the brushed-metal movie finish. Chassis STLs by the
+     <a href="https://github.com/TARS-AI-Community/TARS-AI">TARS-AI Community</a>.</p>
+  <div class="docGrid">
+    <a class="doc reveal" href="https://github.com/metaforismo/TarsGPT/blob/main/docs/en/SHOPPING_LIST.md"><span class="k">Buy</span><h3>Shopping list</h3><p>Every part with quantities, printer comparison, filament, metal-finish techniques.</p></a>
+    <a class="doc reveal" href="https://github.com/metaforismo/TarsGPT/blob/main/docs/en/COST_ESTIMATE.md"><span class="k">Budget</span><h3>Cost estimate</h3><p>Line-by-line prices, three scenarios, monthly running costs.</p></a>
+    <a class="doc reveal" href="https://github.com/metaforismo/TarsGPT/blob/main/docs/en/BUILD_GUIDE.md"><span class="k">Assemble</span><h3>Build guide</h3><p>Print settings, wiring (mind the 6.2 V!), assembly order, calibration.</p></a>
+    <a class="doc reveal" href="https://github.com/metaforismo/TarsGPT/blob/main/docs/en/SOFTWARE.md"><span class="k">Run</span><h3>Software manual</h3><p>Architecture, every skill, AI-stack options, HTTP API, troubleshooting.</p></a>
   </div>
 </div></section>
 
-<section id="learn"><div class="wrap">
-  <h2>It learns to walk — with rewards you can verify</h2>
-  <p class="sub">No simulation hand-waving: the reward is real centimeters covered. A (1+1) evolution
-    strategy mutates five gait-timing parameters; you (or the camera, or the IMU) judge the result.
-    A MuJoCo pre-filter — the <i>same</i> gait code, driving physics instead of servos — screens
-    ~18,000 candidates per hour, and a Spearman honesty check tells you how much to trust it on
-    <i>your</i> build.</p>
-  <pre>$ python -m tars.learn --reward mujoco --iterations 300 --dr 6   # overnight, on a PC
-$ python -m tars.learn --correlate                                # how honest is the sim?
-$ python -m tars.learn --reward camera --steps 3                  # verify on the real floor</pre>
+<!-- ============ 03 LEARNING ============ -->
+<section id="learning"><div class="wrap">
+  <div class="secHead reveal"><span class="idx">03</span><h2>It learns to walk</h2></div>
+  <p class="lede reveal">No simulation hand-waving — the reward is real centimeters covered.
+     An evolution strategy mutates the gait timing; the tape measure, the camera or the IMU judges
+     the result. A MuJoCo pre-filter (the <i>same</i> gait code, driving physics instead of servos)
+     screens thousands of candidates overnight, and a Spearman honesty check tells you exactly how
+     much to trust it on <i>your</i> floor.</p>
+  <div class="term reveal">
+    <span class="c"># overnight, on a PC — 6 randomized worlds per candidate</span><br>
+    $ python -m tars.learn --reward mujoco --iterations 300 --dr 6<br><br>
+    <span class="c"># how honest is the sim about YOUR build?</span><br>
+    $ python -m tars.learn --correlate<br>
+    &nbsp;&nbsp;Spearman rank correlation sim vs real: rho = +0.71<br>
+    &nbsp;&nbsp;Verdict: strong — the sim is a useful pre-filter for this build<br><br>
+    <span class="c"># then verify the winner on the real floor</span><br>
+    $ python -m tars.learn --reward camera --steps 3
+  </div>
 </div></section>
 
-<section id="credits"><div class="wrap">
-  <h2>Credits</h2>
-  <p class="sub" style="margin-bottom:0">
+<!-- ============ 04 ORIGINS ============ -->
+<section id="origins"><div class="wrap">
+  <div class="secHead reveal"><span class="idx">04</span><h2>Origins</h2></div>
+  <p class="credits reveal">
     TarsGPT is based on <a href="https://www.hackster.io/charlesdiaz/how-to-build-your-own-replica-of-tars-from-interstellar-224833"><b>Charlie Diaz's original TARS replica</b></a> —
-    the idea that started it all — rebuilt as an original codebase and extended with everything above:
-    the AI runtime, the skills system, gait learning with verifiable rewards, the balance-first
-    redesign and the bilingual documentation. The 3D-printable chassis design is by the
+    the idea that started it all — rebuilt as an original codebase and extended with everything on
+    this page: the AI runtime, the skills system, gait learning with verifiable rewards, the
+    balance-first redesign and the bilingual documentation. The 3D-printable chassis is by the
     <a href="https://github.com/TARS-AI-Community/TARS-AI">TARS-AI Community</a> (CC BY-NC 4.0).
     TARS is a character from Christopher Nolan's <i>Interstellar</i>; this is a non-commercial fan
-    project, not affiliated with the film.
+    project, unaffiliated with the film.
   </p>
 </div></section>
 
 <footer><div class="wrap">
-  <span><b>TarsGPT</b> — MIT-licensed code · <a href="https://github.com/metaforismo/TarsGPT">github.com/metaforismo/TarsGPT</a></span>
-  <span>Humor setting: 75%. Honesty setting: 90%.</span>
+  <span>TARSGPT — MIT · <a href="https://github.com/metaforismo/TarsGPT" style="color:var(--dim)">github.com/metaforismo/TarsGPT</a></span>
+  <span>HUMOR 75% · HONESTY 90%</span>
 </div></footer>
 
+<script>
+  // nav background on scroll + section reveal
+  const nav = document.getElementById("nav");
+  addEventListener("scroll", () => nav.classList.toggle("scrolled", scrollY > 40), { passive: true });
+  const observer = new IntersectionObserver(entries => entries.forEach(entry => {
+    if (entry.isIntersecting) { entry.target.classList.add("in"); observer.unobserve(entry.target); }
+  }), { threshold: 0.12 });
+  document.querySelectorAll(".reveal").forEach(node => observer.observe(node));
+</script>
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
