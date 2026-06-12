@@ -781,6 +781,16 @@ def test_fall_watchdog_runtime():
     check()
 
 
+def test_version_flag():
+    import subprocess
+    import tars
+    out = subprocess.run([sys.executable, "-m", "tars.app", "--version"],
+                         capture_output=True, text=True,
+                         cwd=Path(__file__).resolve().parent.parent,
+                         env={**os.environ, "TARS_SIM": "1"})
+    assert out.returncode == 0 and tars.__version__ in out.stdout
+
+
 def test_strafing():
     gaits = Gaits(ServoDriver(60, sim=True), settings)
     calls = []

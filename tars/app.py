@@ -69,6 +69,9 @@ def battery_watchdog(speaker: Speaker):
 
 def main():
     parser = argparse.ArgumentParser(description="TARS robot runtime")
+    from . import __version__
+    parser.add_argument("--version", action="version",
+                        version=f"TarsGPT {__version__}")
     parser.add_argument("--sim", action="store_true", help="simulate servos (no hardware)")
     parser.add_argument("--no-voice", action="store_true", help="disable the voice loop")
     parser.add_argument("--no-web", action="store_true", help="disable the web dashboard")
