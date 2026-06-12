@@ -21,6 +21,22 @@ log = logging.getLogger("tars.web")
 STATIC = Path(__file__).parent / "static"
 
 
+def resolve_ssl_context(s: Settings):
+    """'adhoc' (self-signed HTTPS) when TARS_TLS=1 and pyopenssl is present,
+    else None (plain HTTP). Self-signed certs make browsers show a one-time
+    warning - accept it; what matters is that getUserMedia gets a secure
+    origin so the browser microphone works across the LAN."""
+    if not s.tls:
+        return None
+    try:
+        import OpenSSL  # noqa: F401
+        return "adhoc"
+    except ImportError:
+        log.warning("TARS_TLS=1 but pyopenssl is missing "
+                    "(pip install pyopenssl) - falling back to HTTP")
+        return None
+
+
 def _to_wav(path: str) -> str | None:
     """Convert browser audio (webm/ogg) to 16 kHz mono wav for offline STT."""
     if not shutil.which("ffmpeg"):

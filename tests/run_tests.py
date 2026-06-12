@@ -781,6 +781,25 @@ def test_fall_watchdog_runtime():
     check()
 
 
+def test_tls_context_resolution():
+    from tars.web.server import resolve_ssl_context
+    settings.tls = False
+    assert resolve_ssl_context(settings) is None
+    settings.tls = True
+    try:
+        import OpenSSL  # noqa: F401
+        assert resolve_ssl_context(settings) == "adhoc"
+    except ImportError:
+        assert resolve_ssl_context(settings) is None   # graceful HTTP fallback
+    finally:
+        settings.tls = False
+
+
+def test_dashboard_restores_history():
+    page = open("tars/web/static/index.html").read()
+    assert "loadHistory" in page and "is speaking" in page
+
+
 def test_version_flag():
     import subprocess
     import tars
