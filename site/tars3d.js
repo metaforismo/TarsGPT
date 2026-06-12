@@ -32,16 +32,19 @@ const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 
 const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 80);
-camera.position.set(3.6, 1.5, 5.2);
+const HOME = new THREE.Vector3(3.2, 1.15, 4.6);
+camera.position.copy(HOME);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 0.05, 0);
 controls.enableDamping = true;
 controls.autoRotate = true;
 controls.autoRotateSpeed = 0.65;
-controls.maxDistance = 14;
-controls.minDistance = 2.2;
 controls.maxPolarAngle = Math.PI * 0.55;
+// the page owns the wheel and vertical swipes; the robot owns drags -
+// otherwise visitors get trapped in the canvas and can't scroll
+controls.enableZoom = false;
+renderer.domElement.style.touchAction = "pan-y";
 
 const key = new THREE.DirectionalLight(0xfff4e0, 2.2);
 key.position.set(5, 7, 4);
@@ -360,7 +363,6 @@ let selected = -1, hovered = -1;
 function select(i) {
   selected = i === selected ? -1 : i;
   items.forEach((li, k) => li.classList.toggle("active", k === selected));
-  document.getElementById("viewer").classList.toggle("focused", selected >= 0);
   if (selected >= 0) {
     const { name, desc } = parts[selected].userData;
     partCard.innerHTML = `<b>${name}</b><p>${desc}</p>`;
@@ -432,7 +434,7 @@ document.getElementById("partsBtn").onclick = () =>
   document.getElementById("partsDrawer").classList.toggle("open");
 document.getElementById("resetBtn").onclick = () => {
   explodeSlider.value = 0; explodeTarget = 0;
-  camera.position.set(3.6, 1.5, 5.2);
+  camera.position.copy(HOME);
   controls.target.set(0, 0.05, 0);
   controls.autoRotate = true;
   select(-1);
