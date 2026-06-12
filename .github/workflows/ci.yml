@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install core dependencies
+        run: pip install flask openai requests python-dotenv numpy ruff
+      - name: Lint
+        run: ruff check tars/ tests/ servo_tester.py
+      - name: Compile all modules
+        run: python -m py_compile tars/*.py tars/skills/*.py tars/movement/*.py tars/web/*.py servo_tester.py tests/run_tests.py
+      - name: Run test suite (simulation mode)
+        run: python tests/run_tests.py
+      - name: Package install check
+        run: |
+          pip install .
+          python -c "import tars; print(tars.__version__)"
+          tars --help

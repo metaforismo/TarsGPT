@@ -1,0 +1,27 @@
+# TARS autostart service.
+#
+# Install (adjust the paths if your clone lives elsewhere):
+#   sudo cp deploy/tars.service /etc/systemd/system/tars.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now tars
+#
+# Logs:    journalctl -u tars -f
+# Stop:    sudo systemctl stop tars
+
+[Unit]
+Description=TARS robot runtime
+After=network-online.target sound.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/TarsGPT
+ExecStart=/home/pi/TarsGPT/.venv/bin/python -m tars.app
+Restart=on-failure
+RestartSec=5
+# Give the audio stack a moment on cold boot
+ExecStartPre=/bin/sleep 3
+
+[Install]
+WantedBy=multi-user.target

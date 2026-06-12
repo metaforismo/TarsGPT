@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tarsgpt"
+version = "1.8.0"
+description = "AI robot runtime inspired by TARS: voice, personality, skills, movement and web dashboard"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.10"
+dependencies = [
+    "flask>=3.0",
+    "openai>=1.30",
+    "requests>=2.31",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+voice = ["sounddevice>=0.4.6", "numpy>=1.24", "vosk>=0.3.45"]
+pi = ["adafruit-circuitpython-pca9685", "evdev"]
+
+[project.scripts]
+tars = "tars.app:main"
+
+[tool.setuptools.packages.find]
+include = ["tars*"]
+
+[tool.setuptools.package-data]
+"tars.web" = ["static/*"]
+
+[tool.ruff]
+target-version = "py310"

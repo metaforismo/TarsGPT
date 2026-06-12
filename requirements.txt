@@ -1,0 +1,21 @@
+# Core (works everywhere, including laptops in --sim mode)
+flask>=3.0
+openai>=1.30
+requests>=2.31
+python-dotenv>=1.0
+
+# Voice (microphone + offline wake word). Optional but recommended.
+sounddevice>=0.4.6
+numpy>=1.24
+vosk>=0.3.45
+
+# Raspberry Pi hardware (skip on a laptop)
+# Adafruit-PCA9685            # legacy driver, or:
+# adafruit-circuitpython-pca9685
+# evdev                       # gamepad support
+
+# Optional: camera reward for gait training (python -m tars.learn --reward camera)
+# opencv-python-headless
+
+# Optional: physics pre-filter on a PC (python -m tars.learn --reward mujoco)
+# mujoco

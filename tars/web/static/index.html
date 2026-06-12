@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TARS</title>
+<style>
+  :root { --bg:#0b0e11; --panel:#14181d; --line:#2a313a; --fg:#d7dde4; --acc:#62d0ff; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.5 "Segoe UI",system-ui,sans-serif; background:var(--bg); color:var(--fg);
+         display:grid; grid-template-rows:auto 1fr auto; height:100vh; }
+  header { display:flex; align-items:center; gap:12px; padding:10px 16px; border-bottom:1px solid var(--line); }
+  header h1 { font-size:18px; letter-spacing:4px; margin:0; }
+  #status { margin-left:auto; font-size:12px; color:#8b96a3; }
+  main { display:grid; grid-template-columns:1fr 270px; gap:0; min-height:0; }
+  #chat { overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px; }
+  .msg { max-width:75%; padding:9px 13px; border-radius:10px; white-space:pre-wrap; }
+  .user { align-self:flex-end; background:#1d3a52; }
+  .tars { align-self:flex-start; background:var(--panel); border:1px solid var(--line); }
+  aside { border-left:1px solid var(--line); padding:14px; overflow-y:auto; }
+  aside h2 { font-size:12px; text-transform:uppercase; letter-spacing:2px; color:#8b96a3; margin:14px 0 8px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; }
+  button { background:var(--panel); color:var(--fg); border:1px solid var(--line); border-radius:8px;
+           padding:9px 6px; cursor:pointer; font-size:13px; }
+  button:hover { border-color:var(--acc); color:var(--acc); }
+  label { display:flex; justify-content:space-between; font-size:13px; margin-top:8px; }
+  input[type=range] { width:100%; accent-color:var(--acc); }
+  footer { display:flex; gap:8px; padding:12px 16px; border-top:1px solid var(--line); }
+  #box { flex:1; background:var(--panel); border:1px solid var(--line); border-radius:8px;
+         color:var(--fg); padding:10px 12px; font-size:15px; }
+  #box:focus { outline:1px solid var(--acc); }
+  .wide { grid-column:1 / -1; }
+</style>
+</head>
+<body>
+<header>
+  <svg width="22" height="34" viewBox="0 0 22 34"><rect x="1" y="1" width="20" height="32" rx="2"
+    fill="none" stroke="#62d0ff" stroke-width="2"/><line x1="6.5" y1="1" x2="6.5" y2="33" stroke="#2a313a"/>
+    <line x1="11" y1="1" x2="11" y2="33" stroke="#2a313a"/><line x1="15.5" y1="1" x2="15.5" y2="33" stroke="#2a313a"/></svg>
+  <h1 id="name">TARS</h1>
+  <button onclick="nextTheme()" style="margin-left:8px" title="Theme">🎨</button>
+  <span id="status">connecting…</span>
+</header>
+
+<main>
+  <div id="chat"></div>
+  <aside>
+    <h2>Movement</h2>
+    <div class="grid">
+      <button class="wide" onclick="move('step_forward')">▲ Step forward</button>
+      <button onclick="move('turn_left')">◀ Left</button>
+      <button onclick="move('pose')">Pose</button>
+      <button onclick="move('turn_right')">Right ▶</button>
+      <button onclick="move('strafe_left')">⇇ Strafe</button>
+      <button onclick="move('neutral')">Neutral</button>
+      <button onclick="move('strafe_right')">Strafe ⇉</button>
+    </div>
+    <h2>Voice</h2>
+    <div class="grid">
+      <button onclick="voice('start')">Wake on</button>
+      <button onclick="voice('stop')">Off</button>
+      <button onclick="voice('ptt')">🎤 Talk</button>
+      <button class="wide" id="micBtn" onclick="browserMic()">🎙 Browser mic</button>
+    </div>
+    <h2>Knowledge</h2>
+    <div id="facts" style="font-size:12px;color:#8b96a3;max-height:140px;overflow-y:auto"></div>
+    <h2>Gait training</h2>
+    <canvas id="spark" width="230" height="48" style="width:100%;background:var(--panel);border:1px solid var(--line);border-radius:8px"></canvas>
+    <div id="trainInfo" style="font-size:12px;color:#8b96a3"></div>
+    <h2>Character</h2>
+    <select id="character" onchange="setCharacter()" style="width:100%;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px"></select>
+    <h2>Personality</h2>
+    <label>Humor <span id="humorVal"></span></label>
+    <input type="range" id="humor" min="0" max="100" onchange="saveSettings()">
+    <label>Honesty <span id="honestyVal"></span></label>
+    <input type="range" id="honesty" min="0" max="100" onchange="saveSettings()">
+    <label>Sarcasm <span id="sarcasmVal"></span></label>
+    <input type="range" id="sarcasm" min="0" max="100" onchange="saveSettings()">
+  </aside>
+</main>
+
+<footer>
+  <input id="box" placeholder="Say something to TARS… (Enter to send)" autofocus>
+  <button onclick="send()">Send</button>
+</footer>
+
+<script>
+const chat = document.getElementById('chat');
+const box = document.getElementById('box');
+
+function add(cls, text) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + cls;
+  div.textContent = text;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+
+function renderImages(div) {
+  // turn generated-image paths in TARS replies into inline previews
+  const m = div.textContent.match(/\/images\/[\w.-]+\.(png|jpe?g|webp)/g);
+  (m || []).forEach(src => {
+    const img = document.createElement('img');
+    img.src = src;
+    img.style.cssText = 'max-width:100%;border-radius:8px;display:block;margin-top:8px';
+    div.appendChild(img);
+  });
+}
+
+async function doLogin() {
+  for (;;) {
+    const pw = prompt('TARS dashboard password:');
+    if (pw === null) return false;
+    const r = await fetch('/api/login', {method:'POST', headers:{'Content-Type':'application/json'},
+                                         body: JSON.stringify({password: pw})});
+    if (r.ok) { location.reload(); return true; }
+  }
+}
+
+async function send() {
+  const text = box.value.trim();
+  if (!text) return;
+  box.value = '';
+  add('user', text);
+  const pending = add('tars', '…');
+  try {
+    const r = await fetch('/api/chat/stream', {method:'POST', headers:{'Content-Type':'application/json'},
+                                               body: JSON.stringify({message:text})});
+    const reader = r.body.getReader();
+    const decoder = new TextDecoder();
+    let reply = '', buf = '';
+    for (;;) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, {stream: true});
+      const events = buf.split('\n\n');
+      buf = events.pop();
+      for (const ev of events) {
+        if (!ev.startsWith('data: ')) continue;
+        const data = JSON.parse(ev.slice(6));
+        if (data.delta) { reply += data.delta; pending.textContent = reply; chat.scrollTop = chat.scrollHeight; }
+      }
+    }
+    if (!reply) pending.textContent = '(no reply)';
+    renderImages(pending);
+  } catch (e) { pending.textContent = 'Connection error: ' + e; }
+}
+box.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+
+async function move(action) {
+  await fetch('/api/move', {method:'POST', headers:{'Content-Type':'application/json'},
+                            body: JSON.stringify({action})});
+}
+async function voice(cmd) { await fetch('/api/voice/' + cmd, {method:'POST'}); }
+
+let rec = null;
+async function browserMic() {
+  const btn = document.getElementById('micBtn');
+  if (rec) { rec.stop(); return; }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+    rec = new MediaRecorder(stream);
+    const parts = [];
+    rec.ondataavailable = e => parts.push(e.data);
+    rec.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      rec = null;
+      btn.textContent = '🎙 Browser mic';
+      const form = new FormData();
+      form.append('audio', new Blob(parts, {type: 'audio/webm'}), 'clip.webm');
+      const pending = add('tars', '…');
+      try {
+        const r = await fetch('/api/voice/chat', {method: 'POST', body: form});
+        const data = await r.json();
+        if (data.error) { pending.textContent = '⚠ ' + data.error; return; }
+        pending.before(Object.assign(document.createElement('div'),
+          {className: 'msg user', textContent: data.heard}));
+        pending.textContent = data.reply;
+        speakInBrowser(data.reply);
+      } catch (e) { pending.textContent = 'Connection error: ' + e; }
+      chat.scrollTop = chat.scrollHeight;
+    };
+    rec.start();
+    btn.textContent = '⏹ Stop & send';
+  } catch (e) { alert('Microphone unavailable: ' + e); }
+}
+
+async function speakInBrowser(text) {
+  try {
+    const r = await fetch('/api/tts', {method:'POST', headers:{'Content-Type':'application/json'},
+                                       body: JSON.stringify({text})});
+    if (!r.ok) return;
+    new Audio(URL.createObjectURL(await r.blob())).play();
+  } catch {}
+}
+
+async function loadTraining() {
+  try {
+    const data = await (await fetch('/api/training')).json();
+    const entries = data.entries || [];
+    const info = document.getElementById('trainInfo');
+    const canvas = document.getElementById('spark');
+    const g = canvas.getContext('2d');
+    g.clearRect(0, 0, canvas.width, canvas.height);
+    if (!entries.length) { info.textContent = 'no sessions yet — python -m tars.learn'; return; }
+    const rewards = entries.map(e => e.reward);
+    const lo = Math.min(...rewards), hi = Math.max(...rewards);
+    const x = i => 4 + i * (canvas.width - 8) / Math.max(1, entries.length - 1);
+    const y = v => hi === lo ? canvas.height / 2
+                             : canvas.height - 6 - (v - lo) * (canvas.height - 12) / (hi - lo);
+    const line = (key, color) => {
+      g.strokeStyle = color; g.lineWidth = 1.5; g.beginPath();
+      entries.forEach((e, i) => i ? g.lineTo(x(i), y(e[key])) : g.moveTo(x(i), y(e[key])));
+      g.stroke();
+    };
+    line('reward', '#3e5566');
+    line('best', getComputedStyle(document.documentElement).getPropertyValue('--acc').trim() || '#62d0ff');
+    const last = entries[entries.length - 1];
+    info.textContent = `best ${last.best} · ${entries.length} evals · ${data.mode} · ${data.started}`;
+  } catch {}
+}
+
+async function loadFacts() {
+  try {
+    const data = await (await fetch('/api/knowledge')).json();
+    document.getElementById('facts').innerHTML = (data.triples || []).slice(-15).reverse()
+      .map(t => `• ${t.s} <i>${t.r}</i> ${t.o}`).join('<br>') || '(none yet)';
+  } catch {}
+}
+
+async function loadSettings() {
+  const s = await (await fetch('/api/settings')).json();
+  document.getElementById('name').textContent = s.robot_name;
+  for (const k of ['humor','honesty','sarcasm']) {
+    document.getElementById(k).value = s[k];
+    document.getElementById(k + 'Val').textContent = s[k] + '%';
+  }
+}
+async function saveSettings() {
+  const body = {};
+  for (const k of ['humor','honesty','sarcasm']) {
+    body[k] = +document.getElementById(k).value;
+    document.getElementById(k + 'Val').textContent = body[k] + '%';
+  }
+  await fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'},
+                                body: JSON.stringify(body)});
+}
+const THEMES = [
+  {bg:'#0b0e11', panel:'#14181d', line:'#2a313a', fg:'#d7dde4', acc:'#62d0ff'},  // deep space
+  {bg:'#0d0b07', panel:'#1a150c', line:'#3a2f1a', fg:'#e8d9b0', acc:'#ffb347'},  // amber CRT
+  {bg:'#070b09', panel:'#0e1713', line:'#1f3a2d', fg:'#cfe8d9', acc:'#4ade80'},  // terminal green
+  {bg:'#f4f4f2', panel:'#ffffff', line:'#d4d4d0', fg:'#1d2024', acc:'#0369a1'},  // daylight
+];
+function applyTheme(i) {
+  const t = THEMES[i % THEMES.length];
+  for (const [k, v] of Object.entries(t)) document.documentElement.style.setProperty('--' + k, v);
+  localStorage.setItem('tars_theme', i % THEMES.length);
+}
+function nextTheme() { applyTheme((+localStorage.getItem('tars_theme') || 0) + 1); }
+applyTheme(+localStorage.getItem('tars_theme') || 0);
+
+async function loadCharacters() {
+  try {
+    const data = await (await fetch('/api/characters')).json();
+    const sel = document.getElementById('character');
+    sel.innerHTML = (data.available || []).map(c =>
+      `<option value="${c}" ${c === data.active ? 'selected' : ''}>${c.toUpperCase()}</option>`).join('');
+  } catch {}
+}
+async function setCharacter() {
+  const name = document.getElementById('character').value;
+  const r = await fetch('/api/characters', {method:'POST', headers:{'Content-Type':'application/json'},
+                                            body: JSON.stringify({name})});
+  if (r.ok) loadSettings();
+}
+
+async function poll() {
+  try {
+    const res = await fetch('/api/status');
+    if (res.status === 401) { await doLogin(); return; }
+    const st = await res.json();
+    let line = (st.sim ? 'SIM MODE · ' : '') + 'voice: ' + st.voice;
+    if (st.battery_pct !== null && st.battery_pct !== undefined) line += ' · 🔋 ' + st.battery_pct + '%';
+    if (st.cpu_temp !== null && st.cpu_temp !== undefined) line += ' · ' + st.cpu_temp + '°C';
+    document.getElementById('status').textContent = line;
+  } catch { document.getElementById('status').textContent = 'offline'; }
+}
+loadSettings(); poll(); loadFacts(); loadCharacters(); loadTraining();
+setInterval(poll, 3000); setInterval(loadFacts, 10000); setInterval(loadTraining, 10000);
+</script>
+</body>
+</html>
