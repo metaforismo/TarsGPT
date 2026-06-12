@@ -186,7 +186,8 @@ def create_app(s: Settings, brain: Brain, gaits, voice: VoiceLoop) -> Flask:
             sim=gaits is None or gaits.d.sim,
             name=s.robot_name, humor=s.humor, honesty=s.honesty,
             cpu_temp=read_cpu_temp(),
-            battery_pct=battery_percent(battery["voltage"]) if battery else None)
+            battery_pct=battery_percent(battery["voltage"]) if battery else None,
+            llm_configured=bool(s.openai_api_key or s.llm_base_url))
 
     @app.get("/api/memory")
     def memory():

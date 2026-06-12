@@ -1,0 +1,15 @@
+# Applies tarsgpt.env / wifi.txt from the boot partition on every boot
+# (idempotent: applied files are renamed). Runs before TARS itself.
+[Unit]
+Description=TarsGPT first-boot configurator
+After=local-fs.target
+Before=tars.service NetworkManager.service
+DefaultDependencies=no
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/tars-firstboot.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

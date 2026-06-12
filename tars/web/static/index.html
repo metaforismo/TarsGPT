@@ -46,7 +46,15 @@
 </header>
 
 <main>
-  <div id="chat"></div>
+  <div id="chat">
+    <div id="setupBanner" style="display:none;background:#2a1f0a;border:1px solid #8a6d2a;
+         border-radius:10px;padding:12px 16px;font-size:13px;color:#e8c97a">
+      ⚙️ <b>Setup needed</b> — no LLM configured. Add <code>OPENAI_API_KEY</code> (or
+      <code>TARS_LLM_BASE_URL</code> for a local model) to <code>.env</code> and restart.
+      On TarsGPT OS: put a <code>tarsgpt.env</code> file on the SD card's boot partition
+      and reboot. Verify with <code>tars --doctor</code>.
+    </div>
+  </div>
   <aside>
     <h2>Movement</h2>
     <div class="grid">
@@ -407,6 +415,8 @@ async function poll() {
     if (res.status === 401) { await doLogin(); return; }
     const st = await res.json();
     let line = (st.sim ? 'SIM MODE · ' : '') + 'voice: ' + st.voice;
+    document.getElementById('setupBanner').style.display =
+      st.llm_configured === false ? 'block' : 'none';
     if (st.battery_pct !== null && st.battery_pct !== undefined) line += ' · 🔋 ' + st.battery_pct + '%';
     if (st.cpu_temp !== null && st.cpu_temp !== undefined) line += ' · ' + st.cpu_temp + '°C';
     document.getElementById('status').textContent = line;

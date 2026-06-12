@@ -313,8 +313,18 @@ Three levels, pick yours:
    Imager (set wifi there), then `./install.sh --robot` — installs
    everything, enables I2C and the systemd service. Reboot: TARS is up.
 2. **The flashable image** *(experimental)*: Actions tab → **TarsGPT OS
-   image** → Run workflow (~50 min). Download the `.img.xz` artifact, flash
-   it, add wifi + `OPENAI_API_KEY` in `/home/pi/TarsGPT/.env`, boot.
+   image** → Run workflow (~50 min). Download the `.img.xz` artifact and
+   flash it. Then — from any computer, no SSH needed — drop two text files
+   onto the SD card's boot partition:
+
+   - `tarsgpt.env` — your configuration (copy `.env.example`, add
+     `OPENAI_API_KEY=...`)
+   - `wifi.txt` — network name on line 1, password on line 2
+
+   First boot applies both (then renames them `.applied`), joins your
+   wifi, and TARS starts by itself. SSH is enabled (`pi` / the password
+   you chose when running the workflow); the dashboard shows a setup
+   banner until an LLM is configured.
 3. **Pi Zero 2 W lite profile** (512 MB RAM): it runs with a cloud-leaning
    `.env` — `TARS_STT=openai`, no Vosk/numpy installed, `TARS_ACK=off`,
    espeak or Piper *low* voices, and `--no-gamepad`. The Pi 5 remains the
