@@ -2,13 +2,38 @@
 
 All notable changes to TarsGPT. Dates are merge dates.
 
-## 1.8.2 — 2026-06
+## 1.0.0 — 2026-06
+
+**First public release.** A complete, tested, self-maintained TARS project:
+
+- **Runtime**: streaming voice AI (wake word, follow-up conversation,
+  Whisper/Vosk STT, ElevenLabs/OpenAI/Piper/espeak TTS), 18 plugin skills,
+  semantic memory + knowledge graph, character cards (TARS/CASE/KIPP),
+  speaker ID, web dashboard with browser voice mode, onboard movie-style
+  display, gamepad, simulation mode, doctor/benchmark self-tests
+- **Movement, balance-first (no arms)**: step, turns, lateral strafing,
+  choreographed sequences; sinusoidal easing; IMU fall watchdog
+- **Gait learning with verifiable rewards**: tape-measure, camera
+  (calibrated to cm) or domain-randomized MuJoCo pre-filter with sim
+  calibration and Spearman honesty check; live learning curve
+- **This release**: optional HTTPS (`TARS_TLS=1`) so the browser microphone
+  works from any device on the LAN, and the dashboard now restores the
+  recent conversation on load
+- **Project**: bilingual docs (EN/IT), cost estimates, CI (lint + 57 tests
+  + install on 3.11/3.12), automatic releases, Dependabot, pre-commit
+
+## Development history (pre-1.0)
+
+Internal iteration numbers (formerly 1.0–1.8.2) leading to the first
+public release.
+
+### 0.8.2 — 2026-06
 
 - **Automatic releases**: a version bump merged to `main` now creates the
   tag and GitHub Release by itself (CHANGELOG notes, duplicate-safe);
   manual dispatch remains available
 
-## 1.8.1 — 2026-06
+### 0.8.1 — 2026-06
 
 Repo hygiene release.
 
@@ -19,7 +44,7 @@ Repo hygiene release.
 - Dependabot (pip + actions, weekly) and pre-commit config (ruff + basics)
 - `tars --version`
 
-## 1.8.0 — 2026-06
+### 0.8.0 — 2026-06
 
 - **Lateral movement**: `strafe_left`/`strafe_right` composite gaits
   (turn–step–counter-turn; the leg DOF cannot crab-walk directly), exposed
@@ -29,7 +54,7 @@ Repo hygiene release.
   pyproject; suite grown to 56 tests
 - Merged to `main`
 
-## 1.7.0 — 2026-06
+### 0.7.0 — 2026-06
 
 Balance-first release (the project now explicitly targets the no-arms build).
 
@@ -48,7 +73,7 @@ Balance-first release (the project now explicitly targets the no-arms build).
   on the real robot too; `--robustness` knob and stability-first preset
 - Suite grown to 55 tests
 
-## 1.6.0 — 2026-06
+### 0.6.0 — 2026-06
 
 - **MuJoCo physics pre-filter** (`--reward mujoco`): the exact same Gaits
   code drives a simplified physics model of TARS via a duck-typed driver
@@ -67,7 +92,7 @@ Balance-first release (the project now explicitly targets the no-arms build).
   determinism with common random numbers, fall detection, Spearman, log
   replay)
 
-## 1.5.0 — 2026-06
+### 0.5.0 — 2026-06
 
 - **Stability tax**: during training the gyro is sampled while each
   candidate walks; mean angular rate x `--wobble-weight` (default 0.01) is
@@ -78,7 +103,7 @@ Balance-first release (the project now explicitly targets the no-arms build).
   (speaking / listening / thinking / idle)
 - Suite grown to 45 tests
 
-## 1.4.0 — 2026-06
+### 0.4.0 — 2026-06
 
 - **`tars --doctor`**: 12-point self-test (I2C, PCA9685, IMU, camera, mic,
   audio out, TTS/STT/LLM, ffmpeg, disk) with fix hints per failure -
@@ -91,7 +116,7 @@ Balance-first release (the project now explicitly targets the no-arms build).
 - IMU driver gains `read_gyro()` (deg/s, wobble inspection)
 - Suite grown to 42 tests
 
-## 1.3.0 — 2026-06
+### 0.3.0 — 2026-06
 
 - **MPU-6050 IMU support** (`tars/sensors.py`): orientation and fall
   detection over I2C, graceful without the sensor; attitude reported by
@@ -108,7 +133,7 @@ Balance-first release (the project now explicitly targets the no-arms build).
 - Suite grown to 38 tests
 - Shopping lists updated: MPU-6050 is now supported, not just roadmap
 
-## 1.2.0 — 2026-06
+### 0.2.0 — 2026-06
 
 - **Camera reward** for gait training (`--reward camera`): frames before and
   after each candidate's steps are compared with phase correlation; the
@@ -123,7 +148,7 @@ Balance-first release (the project now explicitly targets the no-arms build).
 - Suite grown to 33 tests (synthetic-shift recovery, camera-reward flow,
   easing endpoint exactness and bounds, interrupt handling)
 
-## 1.1.0 — 2026-06
+### 0.1.0 — 2026-06
 
 - **Gait learning** (`tars/learn/`): (1+1) evolution strategy over the five
   walking-timing parameters with a physically verifiable reward (measured
@@ -138,7 +163,7 @@ Balance-first release (the project now explicitly targets the no-arms build).
 - Gait timing refactored into tunable parameters (`DEFAULT_GAIT_PARAMS`)
 - Lint-clean codebase (ruff); suite grown to 29 tests
 
-## 1.0.0 — 2026-06
+### 0.0.0 — 2026-06
 
 The complete overhaul: from a README plus three scripts to a full, tested robot project.
 

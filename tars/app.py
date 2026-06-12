@@ -139,10 +139,14 @@ def main():
     if args.no_web:
         threading.Event().wait()  # keep daemon threads alive
     else:
-        from .web.server import create_app
+        from .web.server import create_app, resolve_ssl_context
         app = create_app(settings, brain, gaits, voice)
-        log.info("Dashboard: http://%s:%d", settings.web_host, settings.web_port)
-        app.run(host=settings.web_host, port=settings.web_port, threaded=True)
+        ssl_context = resolve_ssl_context(settings)
+        scheme = "https" if ssl_context else "http"
+        log.info("Dashboard: %s://%s:%d", scheme, settings.web_host,
+                 settings.web_port)
+        app.run(host=settings.web_host, port=settings.web_port,
+                threaded=True, ssl_context=ssl_context)
 
 
 if __name__ == "__main__":

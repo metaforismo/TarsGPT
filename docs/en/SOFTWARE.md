@@ -312,7 +312,7 @@ journalctl -u tars -f                               # live logs
 | Microphone not picked up | `arecord -l` to list devices; set the USB card as default in `~/.asoundrc` |
 | No sound | `aplay -l`, test with `speaker-test -t wav`; make sure the USB sound card, not HDMI, is the default sink |
 | Wake word never triggers | Vosk downloads its model on first use — needs internet once; or set `TARS_STT=openai` and use push-to-talk |
-| Browser mic button does nothing | Browsers only allow microphone on HTTPS or localhost. Easiest workaround: `ssh -L 8000:localhost:8000 pi@tars.local`, then open `http://localhost:8000` |
+| Browser mic button does nothing | Browsers only allow microphone on HTTPS or localhost. Fix: `pip install pyopenssl`, set `TARS_TLS=1`, open `https://tars.local:8000` and accept the self-signed certificate once. Alternative: `ssh -L 8000:localhost:8000 pi@tars.local` and open `http://localhost:8000` |
 | Gamepad not detected | It is autodetected now; if it still fails, find it with `python -c "import evdev; print(evdev.list_devices())"` and set `TARS_GAMEPAD` |
 | Replies are slow | Use `gpt-4o-mini` (default), keep ElevenLabs (it streams per sentence), or go local with Ollama on a PC and `TARS_LLM_BASE_URL` |
 

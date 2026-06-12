@@ -221,6 +221,18 @@ async function loadTraining() {
   } catch {}
 }
 
+async function loadHistory() {
+  // the conversation survives restarts server-side: restore it in the UI too
+  try {
+    const data = await (await fetch('/api/memory')).json();
+    for (const turn of data.turns || []) {
+      const div = add(turn.role === 'user' ? 'user' : 'tars',
+                      turn.content.replace(/^\[[^\]]+ is speaking\] /, ''));
+      if (turn.role !== 'user') renderImages(div);
+    }
+  } catch {}
+}
+
 async function loadFacts() {
   try {
     const data = await (await fetch('/api/knowledge')).json();
@@ -286,7 +298,7 @@ async function poll() {
     document.getElementById('status').textContent = line;
   } catch { document.getElementById('status').textContent = 'offline'; }
 }
-loadSettings(); poll(); loadFacts(); loadCharacters(); loadTraining();
+loadSettings(); poll(); loadFacts(); loadCharacters(); loadTraining(); loadHistory();
 setInterval(poll, 3000); setInterval(loadFacts, 10000); setInterval(loadTraining, 10000);
 </script>
 </body>

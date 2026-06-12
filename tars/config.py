@@ -48,6 +48,10 @@ class Settings:
     web_host: str = os.environ.get("TARS_WEB_HOST", "0.0.0.0")
     web_port: int = int(os.environ.get("TARS_WEB_PORT", "8000"))
     web_password: str = os.environ.get("TARS_WEB_PASSWORD", "")  # empty = no login
+    # HTTPS with a self-signed cert: browsers only allow the microphone on
+    # secure origins, so this makes the browser voice mode work from any
+    # device on the LAN (requires pyopenssl)
+    tls: bool = os.environ.get("TARS_TLS", "") == "1"
     # --- Integrations ---
     ha_url: str = os.environ.get("HA_URL", "")
     ha_token: str = os.environ.get("HA_TOKEN", "")
