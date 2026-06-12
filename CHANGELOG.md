@@ -2,6 +2,24 @@
 
 All notable changes to TarsGPT. Dates are merge dates.
 
+## 1.2.0 — 2026-06
+
+The "OS" release — everything needed to treat TARS as an appliance:
+
+- **TarsGPT OS image** (experimental): a GitHub Actions workflow builds a
+  flashable Raspberry Pi OS image with the runtime, dependencies, I2C and
+  autostart preinstalled (Actions -> "TarsGPT OS image")
+- **One-command appliance**: `./install.sh --robot` enables I2C and
+  installs/enables the systemd service on any stock Pi
+- **Discord notifications**: `discord_send` skill + automatic fall and
+  low-battery alerts to a webhook (`DISCORD_WEBHOOK`) - no bot token
+- **Remote Python client** (`tars.client.TarsClient`): chat, move,
+  calibrate and read sensors over HTTP from any machine
+- **Pi Zero 2 W lite profile** documented (EN/IT)
+- Skipped on purpose: music generation (no keyless API worth shipping)
+  and RetroPie launching (out of scope for a no-arms robot)
+- 21 built-in skills; suite at 68 tests
+
 ## 1.1.0 — 2026-06
 
 Feature parity sweep against the reference community project's skill set —

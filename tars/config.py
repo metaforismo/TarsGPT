@@ -60,6 +60,9 @@ class Settings:
     # gait camera-reward when no local camera is attached, e.g.
     # rtsp://user:pass@cam.local/stream or http://phone.local:8080/video
     camera_url: str = os.environ.get("TARS_CAMERA_URL", "")
+    # Discord incoming webhook: TARS posts falls, low battery and anything
+    # you ask it to send there (skill: discord_send)
+    discord_webhook: str = os.environ.get("DISCORD_WEBHOOK", "")
     # --- Hardware ---
     sim_mode: bool = os.environ.get("TARS_SIM", "") == "1"
     pwm_frequency: int = 60

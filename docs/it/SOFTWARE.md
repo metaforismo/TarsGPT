@@ -6,7 +6,7 @@
 
 | Funzionalità | Come funziona | Modulo |
 |---|---|---|
-| **Sistema di skill a plugin** | Metti un file Python in `tars/skills/`, decora una funzione con `@skill` — si registra da sola come tool LLM all'avvio. 20 skill integrate | `tars/skills/` |
+| **Sistema di skill a plugin** | Metti un file Python in `tars/skills/`, decora una funzione con `@skill` — si registra da sola come tool LLM all'avvio. 21 skill integrate | `tars/skills/` |
 | **LLM locale o cloud** | Cloud OpenAI, oppure qualsiasi server OpenAI-compatibile — Ollama, LM Studio, llama.cpp, vLLM — via `TARS_LLM_BASE_URL`. Un TARS completamente offline è possibile | `tars/llm.py` |
 | **Character card** | Personaggi intercambiabili in `characters/*.json` (inclusi TARS, CASE, KIPP): nome, persona, valori di default. "Diventa CASE" funziona a voce, da dashboard o API | `tars/characters.py` |
 | **Sequenze coreografate** | Routine di movimento con nome (greet, wiggle, patrol + le tue in `data/sequences.json`); "TARS, balla" → skill `perform` | `tars/movement/sequences.py` |
@@ -23,6 +23,9 @@
 | **Identificazione speaker** *(sperimentale)* | Impronte vocali a bande di energia + pitch; registrati con "impara la mia voce, sono Francesco" e TARS saprà chi parla: l'LLM vede `[Francesco is speaking]` | `tars/speakerid.py`, `tars/skills/speakers.py` |
 | **Voce dal browser** | Parla con TARS da qualsiasi telefono/PC in rete: la dashboard registra il microfono, il robot trascrive, risponde e rimanda l'audio al browser | `/api/voice/chat` + `/api/tts` |
 | **Home Assistant** | Skill `home_assistant`: accendi/spegni/interroga qualsiasi entità via API REST di HA (`HA_URL`/`HA_TOKEN`) | `tars/skills/home_assistant.py` |
+| **Notifiche Discord** | Skill `discord_send` più avvisi automatici (cadute, batteria scarica) su un webhook — niente bot token, niente dipendenze pesanti (`DISCORD_WEBHOOK`) | `tars/notify.py`, `tars/skills/discord_notify.py` |
+| **Client Python remoto** | `TarsClient("http://tars.local:8000")`: chatta, muovi, calibra e leggi i sensori da qualsiasi macchina — gli esperimenti IA girano su un PC, il robot resta un'appliance | `tars/client.py` |
+| **TarsGPT OS** | Immagine Raspberry Pi flashabile con tutto preinstallato (Actions → "TarsGPT OS image"), oppure trasforma qualsiasi Pi in appliance con `./install.sh --robot` | `deploy/os-stage/`, `install.sh` |
 | **Musica** | `play_music`/`stop_music`: stazioni radio integrate (lofi, jazz, classica, synthwave), URL di stream o file locali via mpv | `tars/skills/music.py` |
 | **Pipeline vocale in streaming** | I token dell'LLM arrivano in streaming, vengono tagliati ai confini di frase e pronunciati subito — TARS inizia a rispondere mentre sta ancora "pensando" il resto | `tars/llm.py` + `tars/speech.py` |
 | **Wake word** ("TARS") | Offline, modello Vosk small con grammatica ristretta | `tars/voice.py` |
@@ -50,7 +53,7 @@
    (timer, watchdog batteria)           └──────┬────────┘
                                                │ tool call
                                  ┌─────────────▼─────────────┐
-                                 │ Registro skill (14 plugin)│
+                                 │ Registro skill (21 plugin) │
                                  │ move · remember · recall  │
                                  │ set_timer · look · persona│
                                  │ system_status · learn_fact│
@@ -306,6 +309,36 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now tars
 journalctl -u tars -f                               # log in diretta
 ```
+
+## TarsGPT OS — la via dell'appliance
+
+Tre livelli, scegli il tuo:
+
+1. **Un comando su un Pi standard**: flasha Raspberry Pi OS con l'Imager
+   ufficiale (imposta lì il wifi), poi `./install.sh --robot` — installa
+   tutto, abilita I2C e il servizio systemd. Riavvii: TARS è su.
+2. **L'immagine flashabile** *(sperimentale)*: tab Actions → **TarsGPT OS
+   image** → Run workflow (~50 min). Scarica l'artifact `.img.xz`,
+   flashalo, aggiungi wifi e `OPENAI_API_KEY` in `/home/pi/TarsGPT/.env`,
+   avvia.
+3. **Profilo lite per Pi Zero 2 W** (512 MB RAM): gira con un `.env`
+   orientato al cloud — `TARS_STT=openai`, niente Vosk/numpy,
+   `TARS_ACK=off`, voci espeak o Piper *low*, e `--no-gamepad`. Il Pi 5
+   resta il cervello consigliato; lo Zero va bene per un TARS da
+   esposizione o solo-chat.
+
+## Controllo remoto da Python
+
+```python
+from tars.client import TarsClient
+tars = TarsClient("http://tars.local:8000", password="opzionale")
+print(tars.chat("rapporto di stato"))
+tars.move("strafe_left")
+tars.calibrate(0, 280, save_as="neutral_height")
+```
+
+Stessa API HTTP della dashboard — il pattern distribuito (robot come
+appliance leggera, cervello ovunque) senza macchinario gRPC.
 
 ## Risoluzione problemi
 

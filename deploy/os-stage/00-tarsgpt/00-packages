@@ -1,0 +1,9 @@
+git
+python3-venv
+python3-dev
+portaudio19-dev
+espeak-ng
+mpv
+alsa-utils
+i2c-tools
+ffmpeg

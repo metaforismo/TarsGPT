@@ -31,3 +31,22 @@ echo
 echo "Done. Launch with:"
 echo "  source .venv/bin/activate && python -m tars.app        # on the robot"
 echo "  source .venv/bin/activate && python -m tars.app --sim  # on a laptop"
+
+# --robot: turn this machine into a TARS appliance (I2C + autostart)
+if [ "${1:-}" = "--robot" ]; then
+    echo
+    echo "==> Appliance setup (--robot)"
+    if command -v raspi-config >/dev/null; then
+        sudo raspi-config nonint do_i2c 0 && echo "==> I2C enabled"
+    else
+        echo "==> raspi-config not found - enable I2C manually if needed"
+    fi
+    sed -e "s|^User=.*|User=$(whoami)|" \
+        -e "s|^WorkingDirectory=.*|WorkingDirectory=$(pwd)|" \
+        -e "s|^ExecStart=.*|ExecStart=$(pwd)/.venv/bin/python -m tars.app|" \
+        deploy/tars.service | sudo tee /etc/systemd/system/tars.service >/dev/null
+    sudo systemctl daemon-reload
+    sudo systemctl enable tars
+    echo "==> TARS will start on every boot (journalctl -u tars -f for logs)."
+    echo "==> Add your API key to .env, then: sudo systemctl start tars"
+fi
