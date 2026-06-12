@@ -30,7 +30,8 @@ EXPECTED_SKILLS = {"move", "remember", "recall", "set_personality", "set_timer",
                    "look", "system_status", "learn_fact", "query_facts",
                    "forget_facts", "play_music", "stop_music",
                    "home_assistant", "enroll_speaker", "perform",
-                   "set_character", "set_volume", "generate_image"}
+                   "set_character", "set_volume", "generate_image",
+                   "web_search", "calculate"}
 
 skills.load_skills()  # populate the registry once for every test
 
@@ -821,6 +822,64 @@ def test_shopping_lists_have_buy_links():
                         ("docs/it/LISTA_ACQUISTI.md", "[Compra](")):
         text = open(path).read()
         assert text.count(label) >= 27, f"{path}: {text.count(label)} links"
+
+
+def test_calculator_safe_eval():
+    ctx = make_ctx()
+    assert skills.run("calculate", {"expression": "12.5 * 6 / 5"}, ctx).endswith("= 15")
+    assert skills.run("calculate", {"expression": "sqrt(2)**2"}, ctx)\
+        .endswith("= 2.0000000000000004")
+    assert skills.run("calculate", {"expression": "round(pi, 2)"}, ctx).endswith("= 3.14")
+    # everything dangerous must be rejected, never executed
+    for evil in ("__import__('os')", "open('/etc/passwd')", "x", "2**9999",
+                 "(1).__class__", "1; print(1)", "1/0"):
+        assert skills.run("calculate", {"expression": evil}, ctx).startswith("error"), evil
+
+
+def test_web_search_graceful():
+    # offline sandbox: must fail with a message, never raise
+    ctx = make_ctx()
+    result = skills.run("web_search", {"query": "interstellar movie"}, ctx)
+    assert isinstance(result, str) and result
+    if result.startswith("error"):
+        assert "no result" in result
+
+
+def test_network_camera_fallback():
+    from tars.skills.vision import _capture_from_url, capture
+    assert _capture_from_url("rtsp://192.0.2.1/none") is None   # dead cam: None, fast
+    old = settings.camera_url
+    try:
+        settings.camera_url = "rtsp://192.0.2.1/none"
+        assert capture() is None      # falls through to local tools (absent here)
+    finally:
+        settings.camera_url = old
+
+
+def test_calibration_endpoint():
+    ctx = make_ctx()
+    brain = Brain(settings, ctx.memory, ctx)
+    spk = Speaker(settings)
+    spk.muted = True
+    app = create_app(settings, brain, ctx.gaits, VoiceLoop(settings, brain, spk))
+    c = app.test_client()
+    assert c.post("/api/calibrate", json={"channel": 0, "value": 300}).json["ok"]
+    assert c.post("/api/calibrate", json={"channel": 0, "value": 9999}).json["value"] == 680
+    assert c.post("/api/calibrate", json={"channel": 99, "value": 300}).status_code == 400
+    assert c.post("/api/calibrate", json={}).status_code == 400
+    assert c.post("/api/calibrate",
+                  json={"channel": 0, "value": 300, "save_as": "nope"}).status_code == 400
+    old = settings.pwm["neutral_height"]
+    try:
+        data = c.post("/api/calibrate", json={"channel": 0, "value": 280,
+                                              "save_as": "neutral_height"}).json
+        assert data["saved"] == "neutral_height"
+        assert settings.pwm["neutral_height"] == 280
+    finally:
+        settings.pwm["neutral_height"] = old
+        settings.save()
+    page = open("tars/web/static/index.html").read()
+    assert "calDrive" in page and "kgCanvas" in page
 
 
 def test_dashboard_restores_history():

@@ -2,6 +2,25 @@
 
 All notable changes to TarsGPT. Dates are merge dates.
 
+## 1.1.0 — 2026-06
+
+Feature parity sweep against the reference community project's skill set —
+all original implementations:
+
+- **`web_search` skill**: keyless factual lookups (DuckDuckGo Instant
+  Answers with Wikipedia fallback) so TARS can answer beyond its training
+- **`calculate` skill**: exact arithmetic via a whitelisted AST evaluator
+  (their sandbox-exec idea, reduced to what is provably safe)
+- **Network camera** (`TARS_CAMERA_URL`): an RTSP/HTTP camera (or an old
+  phone) becomes TARS's eyes for `look` and camera-rewarded gait training,
+  with hard timeouts and local-camera fallback
+- **Web servo calibration**: Calibration panel in the dashboard — pick a
+  channel, nudge the PWM live, save into any named calibration slot
+  (`POST /api/calibrate`)
+- **Knowledge graph view**: the dashboard now renders facts as a small
+  force-directed graph
+- 20 built-in skills; suite at 65 tests
+
 ## 1.0.0 — 2026-06
 
 **First public release.** A complete, tested, self-maintained TARS project:

@@ -12,7 +12,7 @@ TarsGPT is a **complete, self-contained robot project**: an original Python runt
 
 ## ✨ Features
 
-- 🧩 **Skills plugin system** — drop a decorated Python function in `tars/skills/` and it becomes an LLM tool automatically; 18 built-in skills
+- 🧩 **Skills plugin system** — drop a decorated Python function in `tars/skills/` and it becomes an LLM tool automatically; 20 built-in skills
 - 🖥️ **Local or cloud LLM** — OpenAI, or fully local via Ollama/LM Studio (`TARS_LLM_BASE_URL`); free local neural voice with Piper TTS
 - 🎭 **Character cards** — switch between TARS, CASE and KIPP (or your own) by voice or dashboard
 - 🕺 **Choreographed sequences** — greet, wiggle, patrol or your own routines ("TARS, do a little dance")
@@ -104,7 +104,7 @@ TarsGPT è un **progetto robot completo e autonomo**: un runtime Python original
 
 ## ✨ Funzionalità
 
-- 🧩 **Sistema di skill a plugin** — metti una funzione Python decorata in `tars/skills/` e diventa automaticamente un tool dell'LLM; 18 skill integrate
+- 🧩 **Sistema di skill a plugin** — metti una funzione Python decorata in `tars/skills/` e diventa automaticamente un tool dell'LLM; 20 skill integrate
 - 🖥️ **LLM locale o cloud** — OpenAI, oppure tutto in locale via Ollama/LM Studio (`TARS_LLM_BASE_URL`); voce neurale locale gratuita con Piper TTS
 - 🎭 **Character card** — passa da TARS a CASE a KIPP (o ai tuoi) a voce o da dashboard
 - 🕺 **Sequenze coreografate** — greet, wiggle, patrol o le tue routine ("TARS, balla")

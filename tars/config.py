@@ -56,6 +56,10 @@ class Settings:
     ha_url: str = os.environ.get("HA_URL", "")
     ha_token: str = os.environ.get("HA_TOKEN", "")
     music_dir: str = os.environ.get("TARS_MUSIC_DIR", str(DATA_DIR / "music"))
+    # network camera (IP cam / old phone) used by the look skill and the
+    # gait camera-reward when no local camera is attached, e.g.
+    # rtsp://user:pass@cam.local/stream or http://phone.local:8080/video
+    camera_url: str = os.environ.get("TARS_CAMERA_URL", "")
     # --- Hardware ---
     sim_mode: bool = os.environ.get("TARS_SIM", "") == "1"
     pwm_frequency: int = 60
