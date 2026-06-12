@@ -125,6 +125,28 @@ TARS_STT=vosk
 
 If the local server doesn't support tool calling, TARS detects it at runtime and degrades to plain conversation instead of failing (skills are temporarily disabled).
 
+## Balance first: the no-arms philosophy
+
+This project targets the **no-arms build**: arms add 2 servos, ~250 g high
+on the chassis and nothing to locomotion — TARS doesn't need to grab
+anything, it needs to *not fall*. Less mass up top = lower center of gravity
+= better balance, and €30 saved. (The arm skills and channels remain if you
+disagree.) Balance is defended at three levels:
+
+1. **Trained** — the stability tax and fall penalties below shape the gait
+   itself toward not falling.
+2. **At runtime** — with the MPU-6050 installed, a **fall watchdog** checks
+   attitude every 2 s: a confirmed fall relaxes the leg servos (straining
+   against the floor strips gears), announces it, and re-arms automatically
+   when you set TARS upright.
+3. **Stability-first training preset** — weigh smoothness and robustness
+   harder than raw speed:
+
+```bash
+python -m tars.learn --reward mujoco --iterations 500 --dr 8 \
+    --wobble-weight 0.03 --robustness 1.0
+```
+
 ## Teaching TARS to walk better (verifiable reward)
 
 The walking gait depends on five timing parameters (torso lift speed, leg

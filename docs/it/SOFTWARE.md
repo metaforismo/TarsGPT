@@ -125,6 +125,29 @@ TARS_STT=vosk
 
 Se il server locale non supporta il tool calling, TARS lo rileva a runtime e degrada a conversazione semplice invece di fallire (le skill vengono temporaneamente disabilitate).
 
+## Prima l'equilibrio: la filosofia senza braccia
+
+Questo progetto punta alla **build senza braccia**: le braccia aggiungono 2
+servo, ~250 g in alto sul telaio e nulla alla locomozione — TARS non deve
+afferrare niente, deve *non cadere*. Meno massa in alto = baricentro più
+basso = equilibrio migliore, e 30 € risparmiati. (Le skill e i canali per le
+braccia restano, se la pensi diversamente.) L'equilibrio è difeso su tre
+livelli:
+
+1. **In allenamento** — la tassa di stabilità e le penalità caduta plasmano
+   l'andatura stessa verso il non cadere.
+2. **A runtime** — con l'MPU-6050 montato, un **watchdog cadute** controlla
+   l'assetto ogni 2 s: una caduta confermata rilassa i servo delle gambe
+   (sforzare contro il pavimento spana gli ingranaggi), lo annuncia, e si
+   riarma da solo quando rimetti TARS in piedi.
+3. **Preset di training stability-first** — pesa fluidità e robustezza più
+   della velocità pura:
+
+```bash
+python -m tars.learn --reward mujoco --iterations 500 --dr 8 \
+    --wobble-weight 0.03 --robustness 1.0
+```
+
 ## Insegnare a TARS a camminare meglio (reward verificabile)
 
 L'andatura dipende da cinque parametri di timing (velocità di sollevamento del

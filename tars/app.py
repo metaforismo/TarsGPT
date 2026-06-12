@@ -24,6 +24,31 @@ from .speech import Speaker
 from .voice import VoiceLoop
 
 
+def make_fall_watchdog(imu, gaits, speaker, confirmations: int = 2):
+    """Runtime balance guard: if the IMU reports TARS not-upright for a few
+    consecutive checks, relax the leg servos (straining against the floor
+    destroys gears) and say so. Re-arms automatically once set upright."""
+    state = {"streak": 0, "down": False}
+
+    def check():
+        upright = imu.is_upright()
+        if upright is None:
+            return
+        if upright:
+            if state["down"]:
+                speaker.say("Back upright. Resuming normal operation.")
+                gaits.neutral()
+            state["streak"], state["down"] = 0, False
+            return
+        state["streak"] += 1
+        if state["streak"] >= confirmations and not state["down"]:
+            state["down"] = True
+            gaits.relax_legs()
+            speaker.say("I have fallen. Leg servos relaxed - "
+                        "please set me upright.")
+    return check
+
+
 def battery_watchdog(speaker: Speaker):
     """Periodic check; TARS announces when the battery runs low."""
     from .skills.system import read_battery, battery_percent
@@ -93,6 +118,10 @@ def main():
                       speaker_id=speaker_id if speaker_id.available else None)
 
     scheduler.every(60, battery_watchdog(speaker))
+    from .sensors import get_imu
+    if get_imu().available:
+        scheduler.every(2, make_fall_watchdog(get_imu(), gaits, speaker))
+        log.info("fall watchdog armed (IMU present)")
 
     if not args.no_gamepad:
         threading.Thread(target=gamepad.run,

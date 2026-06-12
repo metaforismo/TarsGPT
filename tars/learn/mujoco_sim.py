@@ -61,20 +61,33 @@ LIFT_TRAVEL = 0.10    # meters of slider travel across the full PWM lift range
 DRIVE_TRAVEL = -0.55  # radians from neutral to "forward" PWM (sign verified
                       # empirically: this orientation walks toward +x)
 
+# Real-servo speed caps (MG996R-class at ~6 V): without these, position
+# actuators teleport toward jumped targets. The lift is asymmetric on
+# purpose: RAISING the torso is servo-limited, but the bump DROP is
+# gravity-assisted (the servo only retracts the leg out of the way), so it
+# is much faster - this asymmetry is what makes the pivot gait work, in sim
+# as on the floor (rates verified empirically against gait sensitivity).
+HINGE_MAX_RATE = 6.2       # rad/s  (~0.17 s per 60 degrees)
+SLIDE_RAISE_RATE = 0.40    # m/s    torso up: servo through its crank
+SLIDE_DROP_RATE = 2.0      # m/s    torso down: gravity-assisted
+SETTLE_SECONDS = 0.8
+
 
 class MujocoDriver:
     """Duck-types ServoDriver (set_pwm/relax/sleep) against MuJoCo physics.
 
     sleep() advances the simulation instead of waiting, so the gait's timing
     parameters keep their exact meaning while episodes run orders of
-    magnitude faster than wall time.
+    magnitude faster than wall time. Commanded targets are slew-rate-limited
+    like a real servo. reset() restores the cached settled stance, so reuse
+    across episodes costs almost nothing.
     """
 
     parallel_safe = False  # Gaits runs its parallel phases sequentially here
     sim = True
 
     def __init__(self, s, friction: float = 0.8, kp_scale: float = 1.0,
-                 mass_scale: float = 1.0):
+                 mass_scale: float = 1.0, speed_scale: float = 1.0):
         import mujoco
         self._mujoco = mujoco
         self.m = mujoco.MjModel.from_xml_string(MODEL_XML)
@@ -100,13 +113,38 @@ class MujocoDriver:
                            s.ch_star_drive: 2}
         self._ranges = list(zip(self.m.actuator_ctrlrange[:, 0],
                                 self.m.actuator_ctrlrange[:, 1]))
+        hinge_rate = HINGE_MAX_RATE * speed_scale
+        # per-actuator (raise_rate, drop_rate); +ctrl on the slider = torso down
+        self._rates = [(SLIDE_RAISE_RATE * speed_scale,
+                        SLIDE_DROP_RATE * speed_scale),
+                       (hinge_rate, hinge_rate),
+                       (hinge_rate, hinge_rate)]
+        self._targets = [0.0, 0.0, 0.0]
         self._frac = 0.0
         self.angvel_samples: list[float] = []
-        # start in the calibrated neutral stance and let it settle
-        self.set_pwm(s.ch_center_lift, p["neutral_height"])
-        self.set_pwm(s.ch_port_drive, p["neutral_port"])
-        self.set_pwm(s.ch_star_drive, p["neutral_star"])
-        self.sleep(0.8)
+        # settle into the calibrated neutral stance once, then cache it so
+        # reset() is nearly free
+        self._neutral_pwm = {s.ch_center_lift: p["neutral_height"],
+                             s.ch_port_drive: p["neutral_port"],
+                             s.ch_star_drive: p["neutral_star"]}
+        for channel, pwm in self._neutral_pwm.items():
+            self.set_pwm(channel, pwm)
+        self.d.ctrl[:] = self._targets  # start servos at their targets
+        self.sleep(SETTLE_SECONDS)
+        self._home_qpos = self.d.qpos.copy()
+        self._home_qvel = self.d.qvel.copy()
+        self.angvel_samples.clear()
+
+    def reset(self):
+        """Back to the cached settled stance (skips the settling episode)."""
+        self._mujoco.mj_resetData(self.m, self.d)
+        for channel, pwm in self._neutral_pwm.items():
+            self.set_pwm(channel, pwm)
+        self.d.ctrl[:] = self._targets
+        self.d.qpos[:] = self._home_qpos
+        self.d.qvel[:] = self._home_qvel
+        self._mujoco.mj_forward(self.m, self.d)
+        self._frac = 0.0
         self.angvel_samples.clear()
 
     @staticmethod
@@ -124,17 +162,28 @@ class MujocoDriver:
         target = self._maps[channel](value)
         if lo < hi:  # 0,0 means unlimited in MJCF
             target = max(lo, min(hi, target))
-        self.d.ctrl[aid] = target
+        self._targets[aid] = target
 
     def relax(self, channel: int):
         pass
 
     def sleep(self, seconds: float):
-        """Advance physics by the requested gait-pacing time."""
+        """Advance physics by the requested gait-pacing time, moving each
+        servo toward its commanded target no faster than a real one could."""
         self._frac += seconds
         steps = int(self._frac / self.m.opt.timestep)
         self._frac -= steps * self.m.opt.timestep
+        dt = self.m.opt.timestep
         for i in range(steps):
+            for aid, target in enumerate(self._targets):
+                raise_rate, drop_rate = self._rates[aid]
+                delta = target - self.d.ctrl[aid]
+                max_move = (drop_rate if delta > 0 else raise_rate) * dt
+                if delta > max_move:
+                    delta = max_move
+                elif delta < -max_move:
+                    delta = -max_move
+                self.d.ctrl[aid] += delta
             self._mujoco.mj_step(self.m, self.d)
             if i % 10 == 0:
                 self.angvel_samples.append(

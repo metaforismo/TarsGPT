@@ -76,6 +76,31 @@ def correlate(args):
     return 0
 
 
+def fit_sim_cli(args):
+    """Calibrate the sim's physical constants against the real log."""
+    from .fit import fit_sim
+    from .mujoco_reward import save_sim_calibration
+    from .training_log import TrainingLog
+    log_data = TrainingLog.load()
+    if log_data is None or log_data.get("mode") not in ("measured", "camera"):
+        print("Need a logged REAL session (--reward measured or camera) "
+              "to calibrate against.")
+        return 1
+    print(f"Calibrating sim constants over {args.trials} trials...")
+    try:
+        result = fit_sim(settings, log_data, trials=args.trials,
+                         steps=args.steps, seed=args.seed or 0)
+    except ValueError as e:
+        print(f"Cannot calibrate: {e}")
+        return 1
+    save_sim_calibration(result)
+    print(f"Best: rho {result['rho']:+.2f} over {result['samples']} "
+          "evaluations - saved to data/sim_calibration.json.")
+    print("Domain randomization is now centered on your build; "
+          "re-run --correlate to confirm.")
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(description="TARS gait optimizer")
     parser.add_argument("--reward", choices=["measured", "camera", "mujoco", "sim"],
@@ -86,6 +111,11 @@ def main():
     parser.add_argument("--correlate", action="store_true",
                         help="replay logged real sessions through the MuJoCo "
                              "reward and report rank correlation")
+    parser.add_argument("--fit-sim", action="store_true",
+                        help="calibrate the sim constants against your "
+                             "logged real sessions (then --correlate again)")
+    parser.add_argument("--trials", type=int, default=30,
+                        help="random configurations tried by --fit-sim")
     parser.add_argument("--iterations", type=int, default=12,
                         help="candidate gaits to try (default 12)")
     parser.add_argument("--steps", type=int, default=3,
@@ -104,6 +134,9 @@ def main():
     parser.add_argument("--wobble-weight", type=float, default=0.01,
                         help="stability tax: reward minus WEIGHT x mean gyro "
                              "rate in deg/s (default 0.01, 0 disables)")
+    parser.add_argument("--robustness", type=float, default=0.5,
+                        help="sim only: spread penalty across randomized "
+                             "worlds (higher = stability-first; default 0.5)")
     parser.add_argument("--calibrate-camera", action="store_true",
                         help="one-time px-per-cm calibration: slide TARS a "
                              "known distance, the camera reward then scores "
@@ -114,6 +147,8 @@ def main():
         return calibrate_camera()
     if args.correlate:
         return correlate(args)
+    if args.fit_sim:
+        return fit_sim_cli(args)
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     gaits = Gaits(ServoDriver(settings.pwm_frequency,
@@ -127,6 +162,8 @@ def main():
         from .mujoco_reward import MujocoReward
         reward_fn = MujocoReward(settings, steps=args.steps,
                                  randomizations=args.dr, seed=args.seed,
+                                 wobble_weight=max(0.0, args.wobble_weight),
+                                 robustness=max(0.0, args.robustness),
                                  print_fn=print)
         print(f"Sim pre-filter: {args.iterations} candidates x {args.steps} "
               f"steps x {args.dr} randomized worlds. The sim proposes - "

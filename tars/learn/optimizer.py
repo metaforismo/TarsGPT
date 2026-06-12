@@ -27,6 +27,7 @@ class ParamSpec:
 SEARCH_SPACE = [
     ParamSpec("lift_delay",      2e-4, 4e-3),
     ParamSpec("drive_delay",     2e-5, 1e-3),
+    ParamSpec("bump_pause",      1e-3, 4e-1),  # lower bound ~ "no pause"
     ParamSpec("bump_down_delay", 1e-7, 5e-5),
     ParamSpec("bump_up_delay",   1e-5, 1e-3),
     ParamSpec("return_delay",    1e-3, 2e-2),

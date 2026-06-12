@@ -2,6 +2,25 @@
 
 All notable changes to TarsGPT. Dates are merge dates.
 
+## 1.7.0 — 2026-06
+
+Balance-first release (the project now explicitly targets the no-arms build).
+
+- **Fall watchdog** (runtime): with an MPU-6050, a confirmed fall relaxes
+  the leg servos, announces it, and re-arms when set upright
+- **Sim accuracy**: servo slew-rate limiting with a gravity-assisted
+  asymmetric lift (raise servo-limited at 0.4 m/s, drop at 2.0 m/s) -
+  verified to preserve a live, realistic parameter landscape
+- **Sim calibration** (`--fit-sim`): random search over friction/strength/
+  speed constants maximizing Spearman correlation with your logged real
+  sessions; persisted and used to recenter domain randomization
+- **Efficiency**: physics compiled once per world and reused via cached
+  settled-state reset; fail-fast on falls - ~190 ms per candidate
+  (6 worlds x 3 steps), ~18,500 candidates/hour on a laptop
+- New gait parameter `bump_pause` (pre-bump settle), searchable and active
+  on the real robot too; `--robustness` knob and stability-first preset
+- Suite grown to 55 tests
+
 ## 1.6.0 — 2026-06
 
 - **MuJoCo physics pre-filter** (`--reward mujoco`): the exact same Gaits

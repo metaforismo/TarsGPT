@@ -662,6 +662,134 @@ def test_mujoco_reward_deterministic_and_randomized():
     assert -10 < a < 10 and a == a                   # finite, sane
 
 
+def test_mujoco_slew_limit_and_reset():
+    try:
+        import mujoco  # noqa: F401
+    except ImportError:
+        print("  (mujoco missing, skipped)")
+        return
+    from tars.learn.mujoco_sim import MujocoDriver, HINGE_MAX_RATE
+    driver = MujocoDriver(settings)
+    # command a big jump: ctrl must ramp at the servo's max rate, not teleport
+    ctrl_before = float(driver.d.ctrl[1])
+    driver.set_pwm(settings.ch_port_drive, settings.pwm["forward_port"])
+    driver.sleep(0.05)
+    moved = abs(float(driver.d.ctrl[1]) - ctrl_before)
+    assert moved <= HINGE_MAX_RATE * 0.05 + 1e-9, moved
+    assert moved > 0.1                            # but it IS moving
+    # reset() restores the settled stance exactly
+    driver.sleep(0.5)
+    driver.reset()
+    assert abs(driver.torso_x) < 1e-6
+    assert driver.upright and driver.angvel_samples == []
+
+
+def test_mujoco_reward_reuse_and_fail_fast():
+    try:
+        import mujoco  # noqa: F401
+    except ImportError:
+        print("  (mujoco missing, skipped)")
+        return
+    from tars.learn.mujoco_reward import MujocoReward
+    from tars.movement.gaits import DEFAULT_GAIT_PARAMS
+    reward = MujocoReward(settings, steps=2, randomizations=2, seed=5)
+    a = reward(dict(DEFAULT_GAIT_PARAMS))
+    b = reward(dict(DEFAULT_GAIT_PARAMS))
+    assert a == b, (a, b)                         # reused worlds, same result
+    # fail-fast: a falling first world short-circuits the remaining ones
+    calls = {"n": 0}
+    original = reward._episode
+    def falling(params, index):
+        calls["n"] += 1
+        return reward.fall_penalty
+    reward._episode = falling
+    assert reward(dict(DEFAULT_GAIT_PARAMS)) == reward.fall_penalty
+    assert calls["n"] == 1
+    reward._episode = original
+
+
+def test_fit_sim_machinery():
+    from tars.learn.fit import fit_sim, CONSTANT_RANGES
+    from tars.learn.mujoco_reward import (save_sim_calibration,
+                                          load_sim_calibration,
+                                          SIM_CALIBRATION_FILE)
+    # synthetic "reality": a hidden linear judge of friction-like params
+    def make_judge(true_friction):
+        def factory(constants):
+            def score(params):
+                # candidates rank by lift_delay, modulated by how close the
+                # trial's friction is to the truth
+                gap = abs(constants["friction"] - true_friction)
+                sign = 1 if gap < 0.2 else -1
+                return sign * params["lift_delay"]
+            return score
+        return factory
+    entries = [{"params": {"lift_delay": v}, "reward": v}
+               for v in (0.001, 0.002, 0.003, 0.004, 0.005)]
+    result = fit_sim(settings, {"entries": entries}, trials=25, seed=3,
+                     print_fn=lambda *_: None,
+                     reward_factory=make_judge(0.9))
+    assert abs(result["rho"] - 1.0) < 1e-9        # found a well-ranking config
+    assert abs(result["friction"] - 0.9) < 0.2    # near the hidden truth
+    assert result["samples"] == 5
+    for key, (lo, hi) in CONSTANT_RANGES.items():
+        assert lo <= result[key] <= hi
+    # persistence round-trip used by MujocoReward's world centering
+    save_sim_calibration(result)
+    assert load_sim_calibration()["rho"] == result["rho"]
+    SIM_CALIBRATION_FILE.unlink()
+
+
+def test_bump_pause_default_is_noop():
+    from tars.movement.gaits import DEFAULT_GAIT_PARAMS
+    from tars.learn import SEARCH_SPACE
+    assert DEFAULT_GAIT_PARAMS["bump_pause"] <= 1e-3
+    assert {spec.name for spec in SEARCH_SPACE} == set(DEFAULT_GAIT_PARAMS)
+    gaits = Gaits(ServoDriver(60, sim=True), settings)
+    gaits.step_forward()                          # new param breaks nothing
+
+
+def test_fall_watchdog_runtime():
+    from tars.app import make_fall_watchdog
+    relaxed, neutraled, said = [], [], []
+    class FakeImu:
+        def __init__(self):
+            self.upright = True
+        def is_upright(self):
+            return self.upright
+    class FakeGaits:
+        def relax_legs(self):
+            relaxed.append(1)
+        def neutral(self):
+            neutraled.append(1)
+    class FakeSpeaker:
+        def say(self, text):
+            said.append(text)
+    imu = FakeImu()
+    check = make_fall_watchdog(imu, FakeGaits(), FakeSpeaker(), confirmations=2)
+    check()                                   # upright: nothing happens
+    imu.upright = False
+    check()                                   # 1st bad reading: not yet
+    assert relaxed == []
+    check()                                   # confirmed fall
+    check()                                   # stays down: no repeat
+    assert relaxed == [1] and len(said) == 1 and "fallen" in said[0]
+    imu.upright = True
+    check()                                   # recovery: stance + announce
+    assert neutraled == [1] and len(said) == 2
+    imu.upright = None                        # sensor gone: never crash
+    check()
+
+
+def test_relax_legs():
+    gaits = Gaits(ServoDriver(60, sim=True), settings)
+    relaxed = []
+    gaits.d.relax = lambda ch: relaxed.append(ch)
+    gaits.relax_legs()
+    assert relaxed == [settings.ch_center_lift, settings.ch_port_drive,
+                       settings.ch_star_drive]
+
+
 def test_spearman_and_correlate():
     from tars.learn.correlate import spearman, correlate_log, verdict
     assert abs(spearman([1, 2, 3, 4], [10, 20, 30, 40]) - 1.0) < 1e-9

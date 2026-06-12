@@ -22,6 +22,7 @@ GAIT_PARAMS_FILE = DATA_DIR / "gait_params.json"
 DEFAULT_GAIT_PARAMS = {
     "lift_delay": 0.001,        # torso lift speed
     "drive_delay": 0.0001,      # leg rotation speed
+    "bump_pause": 1e-3,         # settle time between leg swing and bump
     "bump_down_delay": 1e-6,    # the fast drop that makes TARS pivot
     "bump_up_delay": 1e-4,      # the recovery right after the bump
     "return_delay": 0.005,      # rotation back to neutral
@@ -149,6 +150,7 @@ class Gaits:
         with self._lock:
             self.lift_up()
             self.legs_forward()
+            self.d.sleep(self.gp["bump_pause"])  # let the swing settle
             self.torso_bump()
             self.torso_return()
 
@@ -207,6 +209,14 @@ class Gaits:
                             ("port_hand", self.s.ch_port_hand), ("star_hand", self.s.ch_star_hand)):
                 self.arm[key] = self.p[key]
                 self.d.set_pwm(ch, self.p[key])
+
+    def relax_legs(self):
+        """Stop driving the locomotion servos (lift + both drives). Used by
+        the fall watchdog: a fallen TARS straining against the floor strips
+        gears and cooks servos."""
+        for channel in (self.s.ch_center_lift, self.s.ch_port_drive,
+                        self.s.ch_star_drive):
+            self.d.relax(channel)
 
     # ---------- arms ----------
 
