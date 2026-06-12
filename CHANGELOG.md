@@ -2,6 +2,12 @@
 
 All notable changes to TarsGPT. Dates are merge dates.
 
+## 1.8.2 — 2026-06
+
+- **Automatic releases**: a version bump merged to `main` now creates the
+  tag and GitHub Release by itself (CHANGELOG notes, duplicate-safe);
+  manual dispatch remains available
+
 ## 1.8.1 — 2026-06
 
 Repo hygiene release.

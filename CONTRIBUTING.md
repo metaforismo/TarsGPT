@@ -44,7 +44,8 @@ to merge.
 
 ## Releases (maintainers)
 
-Bump `__version__` in `tars/__init__.py` and `pyproject.toml`, add the
-CHANGELOG section, merge, then run the **Release** workflow from the Actions
-tab with the version number — it creates the tag and the GitHub Release with
-the CHANGELOG notes.
+Releases are automatic: bump `__version__` in `tars/__init__.py` and
+`pyproject.toml`, add the matching CHANGELOG section, merge to `main` — the
+**Release** workflow creates the tag and the GitHub Release with the
+CHANGELOG notes (and skips silently if that version is already released).
+Manual dispatch from the Actions tab also works.
