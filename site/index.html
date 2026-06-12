@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TarsGPT — Build your own TARS from Interstellar</title>
+<meta name="description" content="An open-source, AI-powered TARS replica: voice, personality, gait learning with verifiable rewards, and a balance-first no-arms design. Based on Charlie Diaz's original TARS concept.">
+<style>
+  :root { --bg:#05070a; --panel:#0d1117; --line:#1d2733; --fg:#d7dde4; --dim:#8b96a3; --acc:#62d0ff; }
+  * { box-sizing:border-box; margin:0; }
+  html { scroll-behavior:smooth; }
+  body { background:var(--bg); color:var(--fg); font:16px/1.65 "Segoe UI", system-ui, sans-serif; }
+  a { color:var(--acc); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .wrap { max-width:1100px; margin:0 auto; padding:0 24px; }
+  nav { position:sticky; top:0; z-index:10; background:rgba(5,7,10,.85); backdrop-filter:blur(8px);
+        border-bottom:1px solid var(--line); }
+  nav .wrap { display:flex; align-items:center; gap:22px; height:58px; }
+  nav .logo { font-weight:700; letter-spacing:3px; color:var(--fg); }
+  nav .links { margin-left:auto; display:flex; gap:18px; font-size:14px; }
+  nav .links a { color:var(--dim); } nav .links a:hover { color:var(--acc); text-decoration:none; }
+
+  header.hero { padding:90px 0 60px; text-align:center;
+    background:radial-gradient(ellipse 80% 60% at 50% 0%, #0c1622 0%, var(--bg) 70%); }
+  .hero h1 { font-size:clamp(42px,8vw,84px); letter-spacing:.18em; font-weight:800; }
+  .hero h1 span { color:var(--acc); text-shadow:0 0 30px rgba(98,208,255,.45); }
+  .hero p.tag { color:var(--dim); max-width:620px; margin:18px auto 0; font-size:18px; }
+  .cta { margin-top:34px; display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
+  .btn { display:inline-block; padding:12px 22px; border-radius:10px; border:1px solid var(--line);
+         background:var(--panel); color:var(--fg); font-weight:600; }
+  .btn.primary { background:var(--acc); color:#04121c; border-color:var(--acc); }
+  .btn:hover { text-decoration:none; border-color:var(--acc); }
+  .hero .quote { margin-top:42px; color:#3e7d93; font-style:italic; font-size:14px; }
+
+  section { padding:70px 0; border-top:1px solid var(--line); }
+  h2 { font-size:30px; margin-bottom:8px; }
+  .sub { color:var(--dim); margin-bottom:34px; max-width:720px; }
+
+  /* 3D viewer */
+  #viewerSection .layout { display:grid; grid-template-columns:1fr 280px; gap:18px; }
+  #stage { position:relative; height:560px; background:#070b10; border:1px solid var(--line);
+           border-radius:14px; overflow:hidden; }
+  #stage canvas { display:block; }
+  #tooltip { position:absolute; pointer-events:none; background:rgba(7,12,18,.92);
+             border:1px solid var(--acc); border-radius:8px; padding:6px 10px; font-size:13px;
+             color:var(--acc); display:none; z-index:5; white-space:nowrap; }
+  #controls { position:absolute; left:14px; bottom:14px; right:14px; display:flex; gap:14px;
+              align-items:center; background:rgba(7,12,18,.85); border:1px solid var(--line);
+              border-radius:10px; padding:10px 14px; font-size:13px; color:var(--dim); z-index:4;
+              flex-wrap:wrap; }
+  #controls input[type=range] { flex:1; min-width:120px; accent-color:var(--acc); }
+  #controls label { display:flex; gap:6px; align-items:center; cursor:pointer; }
+  #partsPanel { background:var(--panel); border:1px solid var(--line); border-radius:14px;
+                padding:16px; max-height:560px; overflow-y:auto; }
+  #partsPanel h3 { font-size:13px; text-transform:uppercase; letter-spacing:2px; color:var(--dim);
+                   margin-bottom:10px; }
+  #partsList li { list-style:none; padding:7px 10px; border-radius:8px; font-size:14px;
+                  cursor:pointer; color:var(--dim); }
+  #partsList li:hover { color:var(--fg); background:#121a24; }
+  #partsList li.active { color:var(--acc); background:#0d1f2c; }
+  #partDesc { margin-top:12px; padding-top:12px; border-top:1px solid var(--line); font-size:13px;
+              color:var(--dim); min-height:64px; }
+  #partDesc b { color:var(--fg); }
+  .hint { color:#3e7d93; font-size:12px; margin-top:10px; }
+
+  /* features */
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:16px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px; }
+  .card h3 { font-size:17px; margin-bottom:6px; }
+  .card p { color:var(--dim); font-size:14px; }
+  .card .em { font-size:22px; }
+
+  /* docs cards */
+  .doc { display:block; }
+  .doc:hover { border-color:var(--acc); text-decoration:none; }
+  .doc small { color:#3e7d93; }
+
+  pre { background:#070b10; border:1px solid var(--line); border-radius:10px; padding:16px;
+        overflow-x:auto; font-size:13.5px; color:#9fd8ef; }
+
+  footer { border-top:1px solid var(--line); padding:44px 0 60px; color:var(--dim); font-size:14px; }
+  footer .wrap { display:grid; gap:8px; }
+
+  @media (max-width:860px) {
+    #viewerSection .layout { grid-template-columns:1fr; }
+    #stage { height:62vh; }
+    #partsPanel { max-height:260px; }
+  }
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <span class="logo">TARS<span style="color:var(--acc)">GPT</span></span>
+  <div class="links">
+    <a href="#viewerSection">3D Model</a>
+    <a href="#features">Features</a>
+    <a href="#build">Build it</a>
+    <a href="#learn">Gait learning</a>
+    <a href="https://github.com/metaforismo/TarsGPT">GitHub</a>
+  </div>
+</div></nav>
+
+<header class="hero">
+  <div class="wrap">
+    <h1>TARS<span>GPT</span></h1>
+    <p class="tag">Build your own TARS from <i>Interstellar</i> — an open-source robot that talks,
+      walks, keeps its balance, and <b>learns to walk better</b> with physically verifiable rewards.</p>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/metaforismo/TarsGPT">Get the code on GitHub</a>
+      <a class="btn" href="#viewerSection">Explore the robot in 3D</a>
+    </div>
+    <p class="quote">"What's your honesty parameter?" — "Ninety percent."</p>
+  </div>
+</header>
+
+<section id="viewerSection"><div class="wrap">
+  <h2>The robot, piece by piece</h2>
+  <p class="sub">An interactive look at the build: drag to orbit, scroll to zoom, and pull the
+    <b>explode</b> slider to take TARS apart. Click any part to learn what it does.
+    This is a stylized model of the real no-arms build — the printable chassis files come from the
+    <a href="https://github.com/TARS-AI-Community/TARS-AI">TARS-AI Community</a> (CC BY-NC 4.0).</p>
+  <div class="layout">
+    <div id="stage">
+      <div id="tooltip"></div>
+      <div id="controls">
+        <span>Explode</span>
+        <input id="explode" type="range" min="0" max="100" value="0">
+        <label><input id="spin" type="checkbox" checked> auto-rotate</label>
+        <button class="btn" id="resetBtn" style="padding:5px 12px;font-size:12px">Reset</button>
+      </div>
+    </div>
+    <aside id="partsPanel">
+      <h3>Parts</h3>
+      <ul id="partsList"></ul>
+      <div id="partDesc">Click a part in the scene or in this list.</div>
+      <p class="hint">No arms by design: TARS doesn't need to grab anything — it needs to not fall.</p>
+    </aside>
+  </div>
+</div></section>
+
+<section id="features"><div class="wrap">
+  <h2>What it does</h2>
+  <p class="sub">A complete, tested runtime — 59 automated tests, CI on every commit — that degrades
+    gracefully from a full cloud AI stack down to 100% offline and free.</p>
+  <div class="grid">
+    <div class="card"><div class="em">🗣️</div><h3>Hands-free voice AI</h3><p>Offline wake word, follow-up conversation without repeating "TARS", streaming replies spoken sentence-by-sentence while the LLM is still thinking.</p></div>
+    <div class="card"><div class="em">🧩</div><h3>18 plugin skills</h3><p>Drop a decorated Python function in a folder and it becomes an LLM tool: move, look, remember, timers, music, Home Assistant, images…</p></div>
+    <div class="card"><div class="em">🎭</div><h3>Adjustable personality</h3><p>Humor, honesty and sarcasm dials, plus switchable character cards — TARS, CASE and KIPP included.</p></div>
+    <div class="card"><div class="em">🧬</div><h3>Gait learning</h3><p>An evolution strategy tunes the walk against verifiable rewards: centimeters on a tape measure, camera displacement, or a domain-randomized MuJoCo sim.</p></div>
+    <div class="card"><div class="em">⚖️</div><h3>Balance first</h3><p>IMU fall watchdog relaxes the servos when TARS tips over; a gyro "stability tax" makes smoother gaits win during training.</p></div>
+    <div class="card"><div class="em">🕸️</div><h3>Memory & knowledge</h3><p>Semantic long-term memory plus a structured knowledge graph, injected into conversations when relevant.</p></div>
+    <div class="card"><div class="em">📱</div><h3>Web dashboard</h3><p>Streaming chat, browser voice mode from any phone on the LAN (HTTPS built in), movement pad, live learning curve, movie-style onboard display.</p></div>
+    <div class="card"><div class="em">🖥️</div><h3>Cloud or fully local</h3><p>OpenAI + ElevenLabs for the best experience, or Ollama + Piper + Vosk for a TARS that costs €0/month and never phones home.</p></div>
+    <div class="card"><div class="em">🩺</div><h3>Builder-friendly</h3><p><code>tars --doctor</code> self-tests 12 subsystems with fix hints; <code>--benchmark</code> times the voice pipeline; everything runs in simulation on a laptop.</p></div>
+  </div>
+</div></section>
+
+<section id="build"><div class="wrap">
+  <h2>Build it</h2>
+  <p class="sub">Raspberry Pi 5, a PCA9685 servo driver, three to six servos, ~1.5&nbsp;kg of PETG and a
+    weekend of printing. From <b>≈€280</b> if you already own a 3D printer. The docs are bilingual
+    (English &amp; Italian) and cover everything — including which Bambu Lab printer to buy and how to
+    get the brushed-metal movie finish.</p>
+  <div class="grid">
+    <a class="card doc" href="https://github.com/metaforismo/TarsGPT/blob/main/docs/en/SHOPPING_LIST.md"><h3>🛒 Shopping list</h3><p>Every part with quantities, the 3D-printer comparison, filament choices, metal-finish techniques.</p><small>docs/en/SHOPPING_LIST.md</small></a>
+    <a class="card doc" href="https://github.com/metaforismo/TarsGPT/blob/main/docs/en/COST_ESTIMATE.md"><h3>💶 Cost estimate</h3><p>Line-by-line prices (Amazon vs AliExpress), three budget scenarios, monthly running costs.</p><small>docs/en/COST_ESTIMATE.md</small></a>
+    <a class="card doc" href="https://github.com/metaforismo/TarsGPT/blob/main/docs/en/BUILD_GUIDE.md"><h3>🔧 Build guide</h3><p>Print settings, wiring (mind the 6.2&nbsp;V!), assembly order, first calibration.</p><small>docs/en/BUILD_GUIDE.md</small></a>
+    <a class="card doc" href="https://github.com/metaforismo/TarsGPT/blob/main/docs/en/SOFTWARE.md"><h3>🧠 Software manual</h3><p>Architecture, all skills, AI-stack options, HTTP API, troubleshooting.</p><small>docs/en/SOFTWARE.md</small></a>
+  </div>
+</div></section>
+
+<section id="learn"><div class="wrap">
+  <h2>It learns to walk — with rewards you can verify</h2>
+  <p class="sub">No simulation hand-waving: the reward is real centimeters covered. A (1+1) evolution
+    strategy mutates five gait-timing parameters; you (or the camera, or the IMU) judge the result.
+    A MuJoCo pre-filter — the <i>same</i> gait code, driving physics instead of servos — screens
+    ~18,000 candidates per hour, and a Spearman honesty check tells you how much to trust it on
+    <i>your</i> build.</p>
+  <pre>$ python -m tars.learn --reward mujoco --iterations 300 --dr 6   # overnight, on a PC
+$ python -m tars.learn --correlate                                # how honest is the sim?
+$ python -m tars.learn --reward camera --steps 3                  # verify on the real floor</pre>
+</div></section>
+
+<section id="credits"><div class="wrap">
+  <h2>Credits</h2>
+  <p class="sub" style="margin-bottom:0">
+    TarsGPT is based on <a href="https://www.hackster.io/charlesdiaz/how-to-build-your-own-replica-of-tars-from-interstellar-224833"><b>Charlie Diaz's original TARS replica</b></a> —
+    the idea that started it all — rebuilt as an original codebase and extended with everything above:
+    the AI runtime, the skills system, gait learning with verifiable rewards, the balance-first
+    redesign and the bilingual documentation. The 3D-printable chassis design is by the
+    <a href="https://github.com/TARS-AI-Community/TARS-AI">TARS-AI Community</a> (CC BY-NC 4.0).
+    TARS is a character from Christopher Nolan's <i>Interstellar</i>; this is a non-commercial fan
+    project, not affiliated with the film.
+  </p>
+</div></section>
+
+<footer><div class="wrap">
+  <span><b>TarsGPT</b> — MIT-licensed code · <a href="https://github.com/metaforismo/TarsGPT">github.com/metaforismo/TarsGPT</a></span>
+  <span>Humor setting: 75%. Honesty setting: 90%.</span>
+</div></footer>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<script type="module" src="tars3d.js"></script>
+</body>
+</html>
