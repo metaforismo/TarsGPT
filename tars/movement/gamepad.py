@@ -65,14 +65,14 @@ def run(gaits: Gaits, device_path: str):
             gaits.turn_right()
         elif btn == "down":
             gaits.pose()
+        elif btn == "l_trigger":
+            gaits.strafe_left()
+        elif btn == "r_trigger":
+            gaits.strafe_right()
         elif btn == "plus":
             arm_direction = 1
         elif btn == "minus":
             arm_direction = -1
-        elif btn == "l_trigger":
-            gaits.nudge_arm("port_main", arm_direction)
-        elif btn == "r_trigger":
-            gaits.nudge_arm("star_main", arm_direction)
         elif btn == "y":
             gaits.nudge_arm("port_forearm", arm_direction)
         elif btn == "x":

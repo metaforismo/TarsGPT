@@ -781,6 +781,28 @@ def test_fall_watchdog_runtime():
     check()
 
 
+def test_strafing():
+    gaits = Gaits(ServoDriver(60, sim=True), settings)
+    calls = []
+    for name in ("turn_left", "turn_right", "step_forward"):
+        setattr(gaits, name, lambda n=name: calls.append(n))
+    gaits.strafe_left()
+    assert calls == ["turn_left", "step_forward", "turn_right"]
+    calls.clear()
+    gaits.strafe_right()
+    assert calls == ["turn_right", "step_forward", "turn_left"]
+    # exposed everywhere: skill, web, sequences
+    ctx = make_ctx()
+    assert skills.run("move", {"action": "strafe_left"}, ctx).startswith("ok")
+    assert skills.run("perform", {"name": "slalom"}, ctx) == "ok: performed slalom"
+    brain = Brain(settings, ctx.memory, ctx)
+    spk = Speaker(settings)
+    spk.muted = True
+    app = create_app(settings, brain, ctx.gaits, VoiceLoop(settings, brain, spk))
+    r = app.test_client().post("/api/move", json={"action": "strafe_right"})
+    assert r.json["ok"] is True
+
+
 def test_relax_legs():
     gaits = Gaits(ServoDriver(60, sim=True), settings)
     relaxed = []

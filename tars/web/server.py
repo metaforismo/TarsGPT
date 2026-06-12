@@ -115,7 +115,8 @@ def create_app(s: Settings, brain: Brain, gaits, voice: VoiceLoop) -> Flask:
         action = (request.json or {}).get("action", "")
         if gaits is None:
             return jsonify(error="no hardware"), 503
-        if action not in ("step_forward", "turn_left", "turn_right", "pose", "neutral"):
+        if action not in ("step_forward", "turn_left", "turn_right",
+                          "strafe_left", "strafe_right", "pose", "neutral"):
             return jsonify(error="unknown action"), 400
         threading.Thread(target=getattr(gaits, action), daemon=True).start()
         return jsonify(ok=True, action=action)

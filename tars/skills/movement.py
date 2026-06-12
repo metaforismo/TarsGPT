@@ -4,10 +4,13 @@ from ..movement import sequences
 
 
 @skill("move",
-       "Move your physical body. Use when asked to walk, turn, pose or stand straight.",
+       "Move your physical body. Use when asked to walk, turn, sidestep/"
+       "strafe, pose or stand straight.",
        {"type": "object", "properties": {
            "action": {"type": "string",
-                      "enum": ["step_forward", "turn_left", "turn_right", "pose", "neutral"]},
+                      "enum": ["step_forward", "turn_left", "turn_right",
+                               "strafe_left", "strafe_right", "pose",
+                               "neutral"]},
            "repeat": {"type": "integer", "minimum": 1, "maximum": 10, "default": 1},
        }, "required": ["action"]})
 def move(ctx, action, repeat=1):

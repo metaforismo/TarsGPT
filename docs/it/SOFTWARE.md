@@ -30,7 +30,7 @@
 | **Personalità IA** | Umorismo/onestà/sarcasmo 0–100%, regolabili live dalla dashboard o *chiedendolo a TARS* (skill `set_personality`) | `tars/personality.py`, `tars/skills/persona.py` |
 | **Memoria semantica a lungo termine** | Le note vengono trasformate in embedding (OpenAI `text-embedding-3-small`) e recuperate per similarità coseno rispetto a ciò che hai appena detto; offline ricade sul matching per parole chiave. Skill esplicite `remember`/`recall` | `tars/memory.py`, `tars/skills/memory_notes.py` |
 | **Visione** | Skill `look`: frame dalla camera (rpicam/libcamera/fswebcam/OpenCV) → descrizione con GPT multimodale, può anche rispondere a domande sulla scena | `tars/skills/vision.py` |
-| **Movimenti a comando vocale** | L'LLM chiama la skill `move` (passo/svolta/posa) quando gli chiedi di muoversi | `tars/skills/movement.py` → `tars/movement/gaits.py` |
+| **Movimenti a comando vocale** | L'LLM chiama la skill `move` (passo / svolta / **strafe laterale** / posa) quando gli chiedi di muoversi. Lo spostamento laterale è composto come svolta–passo–controsvolta: le gambe possono solo beccheggiare, il passo laterale diretto è meccanicamente impossibile | `tars/skills/movement.py` → `tars/movement/gaits.py` |
 | **Timer e parola proattiva** | "TARS, ricordamelo tra 10 minuti…" → lo scheduler scatta → TARS *parla di sua iniziativa* | `tars/skills/timers.py`, `tars/scheduler.py` |
 | **Auto-monitoraggio** | Skill `system_status` (batteria via INA260, temperatura CPU, uptime, disco) + watchdog batteria che annuncia la carica bassa | `tars/skills/system.py` |
 | **Text-to-speech** | Catena di fallback: ElevenLabs (la più vicina alla voce del film) → OpenAI TTS → espeak-ng | `tars/tts.py` |

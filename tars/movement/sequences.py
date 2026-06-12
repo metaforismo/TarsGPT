@@ -11,7 +11,8 @@ from ..config import DATA_DIR
 log = logging.getLogger("tars.sequences")
 
 SEQUENCES_FILE = DATA_DIR / "sequences.json"
-ALLOWED_ACTIONS = ("step_forward", "turn_left", "turn_right", "pose", "neutral")
+ALLOWED_ACTIONS = ("step_forward", "turn_left", "turn_right",
+                   "strafe_left", "strafe_right", "pose", "neutral")
 
 DEFAULT_SEQUENCES = {
     "greet": [
@@ -30,6 +31,12 @@ DEFAULT_SEQUENCES = {
         {"action": "turn_right", "repeat": 2, "pause": 0.3},
         {"action": "step_forward", "repeat": 3, "pause": 0.3},
         {"action": "turn_right", "repeat": 2, "pause": 0.3},
+    ],
+    "slalom": [
+        {"action": "strafe_left", "pause": 0.3},
+        {"action": "strafe_right", "pause": 0.3},
+        {"action": "strafe_right", "pause": 0.3},
+        {"action": "strafe_left", "pause": 0.3},
     ],
 }
 

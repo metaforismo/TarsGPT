@@ -2,6 +2,16 @@
 
 All notable changes to TarsGPT. Dates are merge dates.
 
+## 1.8.0 — 2026-06
+
+- **Lateral movement**: `strafe_left`/`strafe_right` composite gaits
+  (turn–step–counter-turn; the leg DOF cannot crab-walk directly), exposed
+  in the `move` skill, dashboard buttons, gamepad triggers (replacing arm
+  nudges, per the no-arms focus) and sequences (new `slalom`)
+- Best practices: ruff lint step added to CI, ruff configured in
+  pyproject; suite grown to 56 tests
+- Merged to `main`
+
 ## 1.7.0 — 2026-06
 
 Balance-first release (the project now explicitly targets the no-arms build).

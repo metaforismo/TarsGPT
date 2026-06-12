@@ -30,7 +30,7 @@
 | **AI personality** | Humor/honesty/sarcasm 0–100%, adjustable live from the dashboard or by *asking TARS* (`set_personality` skill) | `tars/personality.py`, `tars/skills/persona.py` |
 | **Semantic long-term memory** | Notes are embedded (OpenAI `text-embedding-3-small`) and retrieved by cosine similarity against what you just said; offline it falls back to keyword matching. Explicit `remember`/`recall` skills | `tars/memory.py`, `tars/skills/memory_notes.py` |
 | **Vision** | `look` skill: camera frame (rpicam/libcamera/fswebcam/OpenCV) → multimodal GPT description, optionally answering a question about the scene | `tars/skills/vision.py` |
-| **Voice-commanded movement** | The LLM calls the `move` skill (step/turn/pose) when you ask it to move | `tars/skills/movement.py` → `tars/movement/gaits.py` |
+| **Voice-commanded movement** | The LLM calls the `move` skill (step / turn / **strafe** / pose) when you ask it to move. Strafing is composed as turn–step–counter-turn: the legs can only pitch, so a direct crab-walk is mechanically impossible | `tars/skills/movement.py` → `tars/movement/gaits.py` |
 | **Timers & proactive speech** | "TARS, remind me in 10 minutes…" → heartbeat scheduler fires → TARS *speaks up on its own* | `tars/skills/timers.py`, `tars/scheduler.py` |
 | **Self-monitoring** | `system_status` skill (battery via INA260, CPU temp, uptime, disk) + a battery watchdog that announces low charge | `tars/skills/system.py` |
 | **Text-to-speech** | ElevenLabs (closest to the movie voice) → OpenAI TTS → espeak-ng fallback chain | `tars/tts.py` |

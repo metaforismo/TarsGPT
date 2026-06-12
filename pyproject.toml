@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tarsgpt"
-version = "1.7.0"
+version = "1.8.0"
 description = "AI robot runtime inspired by TARS: voice, personality, skills, movement and web dashboard"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -28,3 +28,6 @@ include = ["tars*"]
 
 [tool.setuptools.package-data]
 "tars.web" = ["static/*"]
+
+[tool.ruff]
+target-version = "py310"

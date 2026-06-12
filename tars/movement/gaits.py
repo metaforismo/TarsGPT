@@ -172,6 +172,21 @@ class Gaits:
             self._sweep_pair(self.s.ch_port_drive, self.p["back_port"], self.p["neutral_port"],
                              self.s.ch_star_drive, self.p["forward_star"], self.p["neutral_star"], 0.005)
 
+    def strafe_left(self):
+        """Net lateral displacement to the left. The drive servos can only
+        pitch the legs, so a true crab-walk is mechanically impossible:
+        strafing is composed as turn - step - counter-turn, which nets a
+        sideways shift with a small forward drift."""
+        self.turn_left()
+        self.step_forward()
+        self.turn_right()
+
+    def strafe_right(self):
+        """Net lateral displacement to the right (see strafe_left)."""
+        self.turn_right()
+        self.step_forward()
+        self.turn_left()
+
     def pose(self):
         """Lean back into the 'monolith' display pose (toggles)."""
         with self._lock:

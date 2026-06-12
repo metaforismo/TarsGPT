@@ -29,7 +29,7 @@ TarsGPT is a **complete, self-contained robot project**: an original Python runt
 - 💾 **Semantic long-term memory** — notes retrieved by embedding similarity (offline keyword fallback), plus explicit `remember`/`recall` skills
 - 👁️ **Vision** — the `look` skill captures a camera frame and describes the scene via multimodal GPT
 - ⏰ **Timers & proactive speech** — heartbeat scheduler: reminders and low-battery warnings spoken unprompted
-- 🦿 **Walking gaits** — step, turns, "monolith" pose; voice-commanded ("TARS, walk forward") via LLM tool-calling
+- 🦿 **Walking gaits** — step, turns, lateral strafing, "monolith" pose; voice-commanded ("TARS, sidestep right") via LLM tool-calling
 - 🌐 **Web dashboard** — streaming chat, movement pad, personality sliders, voice control, battery/CPU vitals at `http://<pi>:8000`
 - 🎮 **Gamepad driving** — 8BitDo Zero 2 support
 - 🌍 **Multilingual** — English, Italian, Spanish, French, German, Portuguese, Japanese
@@ -116,7 +116,7 @@ TarsGPT è un **progetto robot completo e autonomo**: un runtime Python original
 - 💾 **Memoria semantica a lungo termine** — note recuperate per similarità di embedding (fallback offline a parole chiave), più skill esplicite `remember`/`recall`
 - 👁️ **Visione** — la skill `look` cattura un frame dalla camera e descrive la scena con GPT multimodale
 - ⏰ **Timer e parola proattiva** — scheduler heartbeat: promemoria e avvisi di batteria scarica pronunciati di sua iniziativa
-- 🦿 **Andature** — passo, svolte, posa "monolite"; comandi vocali ("TARS, cammina") via tool-calling LLM
+- 🦿 **Andature** — passo, svolte, spostamento laterale, posa "monolite"; comandi vocali ("TARS, spostati a destra") via tool-calling LLM
 - 🌐 **Dashboard web** — chat in streaming, pulsantiera movimenti, slider personalità, controllo voce, batteria/CPU su `http://<pi>:8000`
 - 🎮 **Guida col gamepad** — supporto 8BitDo Zero 2
 - 🌍 **Multilingua** — italiano, inglese, spagnolo, francese, tedesco, portoghese, giapponese
