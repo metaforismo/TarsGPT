@@ -31,7 +31,7 @@ EXPECTED_SKILLS = {"move", "remember", "recall", "set_personality", "set_timer",
                    "forget_facts", "play_music", "stop_music",
                    "home_assistant", "enroll_speaker", "perform",
                    "set_character", "set_volume", "generate_image",
-                   "web_search", "calculate"}
+                   "web_search", "calculate", "discord_send"}
 
 skills.load_skills()  # populate the registry once for every test
 
@@ -880,6 +880,62 @@ def test_calibration_endpoint():
         settings.save()
     page = open("tars/web/static/index.html").read()
     assert "calDrive" in page and "kgCanvas" in page
+
+
+def test_discord_notifications():
+    from tars import notify as notify_mod
+    ctx = make_ctx()
+    assert "not configured" in skills.run("discord_send", {"message": "hi"}, ctx)
+    assert notify_mod.notify("hello", settings) is False     # unconfigured
+    import requests
+    sent = []
+    old_post, old_hook = requests.post, settings.discord_webhook
+    class FakeResponse:
+        status_code = 204
+    try:
+        settings.discord_webhook = "https://discord.example/webhook"
+        requests.post = lambda url, **kw: (sent.append((url, kw["json"])),
+                                           FakeResponse())[1]
+        assert skills.run("discord_send", {"message": "fall!"}, ctx) \
+            == "ok: sent to Discord"
+        assert sent[0][1]["content"] == "fall!"
+        assert notify_mod.notify("x" * 3000, settings) is True
+        assert len(sent[1][1]["content"]) <= 1900            # Discord limit
+    finally:
+        requests.post, settings.discord_webhook = old_post, old_hook
+
+
+def test_remote_client():
+    import threading
+    from tars.client import TarsClient
+    ctx = make_ctx()
+    brain = Brain(settings, ctx.memory, ctx)
+    spk = Speaker(settings)
+    spk.muted = True
+    app = create_app(settings, brain, ctx.gaits, VoiceLoop(settings, brain, spk))
+    threading.Thread(target=lambda: app.run(host="127.0.0.1", port=8907,
+                                            threaded=True, use_reloader=False),
+                     daemon=True).start()
+    time.sleep(1.0)
+    tars = TarsClient("http://127.0.0.1:8907", timeout=10)
+    assert tars.status()["sim"] is True
+    assert "offline" in tars.chat("hello").lower() or settings.openai_api_key
+    assert tars.move("step_forward")["ok"] is True
+    assert tars.calibrate(0, 300)["ok"] is True
+    assert "triples" in tars.knowledge()
+
+
+def test_os_appliance_artifacts():
+    import subprocess
+    assert subprocess.run(["bash", "-n", "install.sh"]).returncode == 0
+    assert subprocess.run(["bash", "-n",
+                           "deploy/os-stage/00-tarsgpt/01-run-chroot.sh"]).returncode == 0
+    import yaml
+    workflow = yaml.safe_load(open(".github/workflows/os-image.yml"))
+    steps = workflow["jobs"]["build-image"]["steps"]
+    build = next(s for s in steps if "pi-gen-action" in s.get("uses", ""))
+    assert "./deploy/os-stage" in build["with"]["stage-list"]
+    assert open("deploy/os-stage/EXPORT_IMAGE").read().strip()
 
 
 def test_dashboard_restores_history():

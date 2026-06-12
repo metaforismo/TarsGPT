@@ -46,6 +46,9 @@ def make_fall_watchdog(imu, gaits, speaker, confirmations: int = 2):
             gaits.relax_legs()
             speaker.say("I have fallen. Leg servos relaxed - "
                         "please set me upright.")
+            from .config import settings as s
+            from .notify import notify
+            notify("⚠️ TARS has fallen over. Leg servos relaxed.", s)
     return check
 
 
@@ -62,6 +65,8 @@ def battery_watchdog(speaker: Speaker):
         if pct <= settings.battery_low_pct and not state["warned"]:
             state["warned"] = True
             speaker.say(f"Battery at {pct} percent. I suggest a recharge before I power down dramatically.")
+            from .notify import notify
+            notify(f"🔋 TARS battery at {pct}%.", settings)
         elif pct > settings.battery_low_pct + 10:
             state["warned"] = False
     return check

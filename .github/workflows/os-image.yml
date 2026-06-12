@@ -1,0 +1,31 @@
+name: TarsGPT OS image
+
+# Builds a flashable Raspberry Pi OS Lite image with TarsGPT preinstalled:
+# flash it, add your wifi + API key, boot - TARS starts by itself.
+# Experimental: run manually from the Actions tab (takes ~45-60 minutes).
+on:
+  workflow_dispatch:
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build image with pi-gen
+        id: build
+        uses: usimd/pi-gen-action@v1
+        with:
+          image-name: tarsgpt-os
+          stage-list: stage0 stage1 stage2 ./deploy/os-stage
+          hostname: tars
+          username: pi
+          release: bookworm
+          compression: xz
+          enable-pigen-cache: true
+          verbose-output: true
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tarsgpt-os-image
+          path: ${{ steps.build.outputs.image-path }}
+          retention-days: 14
