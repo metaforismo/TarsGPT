@@ -40,21 +40,24 @@
   nav.scrolled { background:rgba(10,11,13,.82); backdrop-filter:blur(10px);
                  border-bottom:1px solid var(--line); }
 
-  /* ---------- hero = the 3D stage ---------- */
-  #viewer { position:relative; height:100svh; min-height:620px; }
-  #stage { position:absolute; inset:0; }
-  #stage canvas { display:block; }
-  #viewer .vignette { position:absolute; inset:0; pointer-events:none;
-    background:radial-gradient(ellipse 90% 70% at 50% 45%, transparent 55%, rgba(10,11,13,.85) 100%); }
-  .heroCopy { position:absolute; left:0; right:0; bottom:110px; pointer-events:none; z-index:6;
-              transition:opacity .35s; }
-  #viewer.focused .heroCopy { opacity:0; }
-  .heroCopy .wrap { pointer-events:none; }
+  /* ---------- hero: copy left, robot right ---------- */
+  #viewer { display:grid; grid-template-columns:minmax(420px,44%) 1fr; min-height:94svh;
+            padding-top:72px; }
+  .heroCopy { display:flex; align-items:center; padding:48px 8px 48px 28px; }
+  .heroCopy .inner { max-width:520px; margin-left:auto; padding-right:24px; }
   .heroCopy .eyebrow { font-family:"JetBrains Mono"; font-size:12px; letter-spacing:.32em;
     text-transform:uppercase; color:var(--amber); margin-bottom:18px; }
-  .heroCopy h1 { font-size:clamp(40px,6.4vw,76px); line-height:1.04; max-width:11ch; }
-  .heroCopy p { color:var(--dim); max-width:46ch; margin-top:18px; font-size:17px; }
-  .heroCopy .cta { margin-top:28px; display:flex; gap:12px; flex-wrap:wrap; pointer-events:auto; }
+  .heroCopy h1 { font-size:clamp(40px,4.6vw,64px); line-height:1.04; }
+  .heroCopy p { color:var(--dim); margin-top:18px; font-size:17px; }
+  .heroCopy .cta { margin-top:28px; display:flex; gap:12px; flex-wrap:wrap; }
+  .heroCopy .hint { margin-top:26px; font:11px "JetBrains Mono"; letter-spacing:.22em;
+    text-transform:uppercase; color:var(--faint); }
+
+  #stageWrap { position:relative; min-height:520px; }
+  #stage { position:absolute; inset:0; }
+  #stage canvas { display:block; }
+  #stageWrap .vignette { position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse 85% 75% at 55% 45%, transparent 58%, rgba(10,11,13,.9) 100%); }
   .btn { display:inline-flex; align-items:center; gap:10px; padding:13px 22px; border-radius:999px;
          font-family:"JetBrains Mono"; font-size:13px; letter-spacing:.06em; cursor:pointer;
          border:1px solid var(--line); background:rgba(16,18,22,.7); color:var(--ink);
@@ -67,7 +70,7 @@
     padding:5px 10px; font:12px "JetBrains Mono"; color:var(--amber); white-space:nowrap; }
 
   /* viewer controls */
-  #hud { position:absolute; right:28px; bottom:110px; z-index:7; display:flex; flex-direction:column;
+  #hud { position:absolute; right:24px; bottom:24px; z-index:7; display:flex; flex-direction:column;
          gap:10px; align-items:flex-end; }
   .hudRow { display:flex; gap:10px; align-items:center; background:rgba(13,15,18,.78);
             border:1px solid var(--line); border-radius:12px; padding:10px 14px;
@@ -76,7 +79,7 @@
   .hudRow button { all:unset; cursor:pointer; color:var(--dim); padding:2px 6px; }
   .hudRow button:hover { color:var(--amber); }
 
-  #partsDrawer { position:absolute; top:92px; right:28px; bottom:200px; width:264px; z-index:7;
+  #partsDrawer { position:absolute; top:20px; right:24px; bottom:120px; width:264px; z-index:7;
     background:rgba(13,15,18,.86); border:1px solid var(--line); border-radius:14px;
     backdrop-filter:blur(10px); padding:18px 8px 18px 18px; transform:translateX(calc(100% + 40px));
     transition:transform .35s cubic-bezier(.2,.8,.2,1); display:flex; flex-direction:column; }
@@ -91,18 +94,14 @@
   #partsList li.active { color:var(--amber); background:rgba(232,181,74,.08); }
   #partsList li.active span { color:var(--amber); }
 
-  #partCard { position:absolute; left:28px; top:50%; transform:translateY(-50%) translateX(-16px);
-    width:300px; z-index:7; background:rgba(13,15,18,.9); border:1px solid var(--line);
-    border-left:2px solid var(--amber); border-radius:12px; padding:18px 20px;
-    backdrop-filter:blur(10px); opacity:0; pointer-events:none; transition:all .3s; }
-  #partCard.show { opacity:1; transform:translateY(-50%); }
+  #partCard { position:absolute; left:24px; bottom:24px; transform:translateY(12px);
+    width:300px; max-width:calc(100% - 48px); z-index:7; background:rgba(13,15,18,.9);
+    border:1px solid var(--line); border-left:2px solid var(--amber); border-radius:12px;
+    padding:18px 20px; backdrop-filter:blur(10px); opacity:0; pointer-events:none;
+    transition:all .3s; }
+  #partCard.show { opacity:1; transform:none; }
   #partCard b { font-family:"Space Grotesk"; font-size:17px; }
   #partCard p { color:var(--dim); font-size:13.5px; margin-top:8px; line-height:1.6; }
-
-  .scrollHint { position:absolute; left:50%; bottom:26px; transform:translateX(-50%); z-index:6;
-    font:11px "JetBrains Mono"; letter-spacing:.3em; color:var(--faint); text-transform:uppercase;
-    animation:bob 2.4s ease-in-out infinite; }
-  @keyframes bob { 50% { transform:translateX(-50%) translateY(6px); } }
 
   /* stats strip */
   .stats { border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
@@ -153,14 +152,16 @@
   .reveal { opacity:0; transform:translateY(26px); transition:opacity .7s, transform .7s; }
   .reveal.in { opacity:1; transform:none; }
 
-  @media (max-width:860px) {
+  @media (max-width:900px) {
+    #viewer { grid-template-columns:1fr; min-height:0; }
+    .heroCopy { padding:56px 28px 8px; }
+    .heroCopy .inner { margin-left:0; padding-right:0; }
+    #stageWrap { min-height:62svh; }
     .feat { grid-template-columns:40px 1fr; }
     .feat p { grid-column:2; }
-    #partCard { left:16px; right:16px; width:auto; top:auto; bottom:190px; transform:none; }
-    #partCard.show { transform:none; }
-    #hud { right:16px; bottom:96px; }
-    #partsDrawer { right:16px; width:240px; bottom:230px; }
-    .heroCopy { bottom:190px; }
+    #partCard { left:16px; right:16px; width:auto; bottom:96px; }
+    #hud { right:16px; bottom:16px; }
+    #partsDrawer { right:16px; width:240px; bottom:110px; }
     nav .links a:not(:last-child) { display:none; }
   }
 </style>
@@ -178,40 +179,41 @@
   </div>
 </div></nav>
 
-<!-- ============ HERO: the robot itself ============ -->
+<!-- ============ HERO: copy left, robot right ============ -->
 <div id="viewer">
-  <div id="stage"><div id="tooltip"></div></div>
-  <div class="vignette"></div>
-
-  <div class="heroCopy"><div class="wrap">
+  <div class="heroCopy"><div class="inner">
     <div class="eyebrow">Open source · Raspberry Pi · 59 tests green</div>
     <h1>Build your own TARS.</h1>
     <p>A walking, talking robot from <i>Interstellar</i> — with a brain, a sense of humor,
-       and a gait it learned by itself. Drag to orbit. Take it apart.</p>
+       and a gait it learned by itself.</p>
     <div class="cta">
       <a class="btn primary" href="https://github.com/metaforismo/TarsGPT">Get the code</a>
       <button class="btn" id="disassembleBtn">Disassemble&nbsp;⌁</button>
     </div>
+    <p class="hint">Drag the robot to orbit · click a part to inspect it</p>
   </div></div>
 
-  <div id="hud">
-    <div class="hudRow">
-      <span>EXPLODE</span>
-      <input id="explode" type="range" min="0" max="100" value="0">
+  <div id="stageWrap">
+    <div id="stage"><div id="tooltip"></div></div>
+    <div class="vignette"></div>
+
+    <div id="hud">
+      <div class="hudRow">
+        <span>EXPLODE</span>
+        <input id="explode" type="range" min="0" max="100" value="0">
+      </div>
+      <div class="hudRow">
+        <button id="partsBtn">PARTS&nbsp;LIST</button>·
+        <button id="resetBtn">RESET&nbsp;VIEW</button>
+      </div>
     </div>
-    <div class="hudRow">
-      <button id="partsBtn">PARTS&nbsp;LIST</button>·
-      <button id="resetBtn">RESET&nbsp;VIEW</button>
-    </div>
+
+    <aside id="partsDrawer">
+      <h3>Components</h3>
+      <ul id="partsList"></ul>
+    </aside>
+    <div id="partCard"></div>
   </div>
-
-  <aside id="partsDrawer">
-    <h3>Components</h3>
-    <ul id="partsList"></ul>
-  </aside>
-  <div id="partCard"></div>
-
-  <div class="scrollHint">scroll</div>
 </div>
 
 <div class="stats"><div class="wrap">
