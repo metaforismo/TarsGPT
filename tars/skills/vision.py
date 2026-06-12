@@ -9,9 +9,36 @@ import tempfile
 from . import skill
 
 
+def _capture_from_url(url: str) -> str | None:
+    """One frame from a network camera (RTSP/HTTP), with hard timeouts so a
+    dead camera can't hang the skill."""
+    try:
+        import cv2
+    except ImportError:
+        return None
+    path = tempfile.mktemp(suffix=".jpg", prefix="tars_eye_")
+    try:
+        cam = cv2.VideoCapture(url, cv2.CAP_FFMPEG,
+                               [cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 4000,
+                                cv2.CAP_PROP_READ_TIMEOUT_MSEC, 4000])
+        ok, frame = cam.read()
+        cam.release()
+        if ok and cv2.imwrite(path, frame):
+            return path
+    except Exception:
+        pass
+    return None
+
+
 def capture() -> str | None:
-    """Grab one camera frame to a jpg; tries Pi camera tools then OpenCV.
+    """Grab one camera frame to a jpg; a configured network camera
+    (TARS_CAMERA_URL) wins, then Pi camera tools, then any USB webcam.
     Shared with the gait optimizer's camera reward."""
+    from ..config import settings
+    if settings.camera_url:
+        path = _capture_from_url(settings.camera_url)
+        if path:
+            return path
     path = tempfile.mktemp(suffix=".jpg", prefix="tars_eye_")
     for tool, args in (("rpicam-still", ["-n", "--immediate", "-o"]),
                        ("libcamera-still", ["-n", "--immediate", "-o"]),

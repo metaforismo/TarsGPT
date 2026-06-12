@@ -6,7 +6,7 @@
 
 | Funzionalità | Come funziona | Modulo |
 |---|---|---|
-| **Sistema di skill a plugin** | Metti un file Python in `tars/skills/`, decora una funzione con `@skill` — si registra da sola come tool LLM all'avvio. 18 skill integrate | `tars/skills/` |
+| **Sistema di skill a plugin** | Metti un file Python in `tars/skills/`, decora una funzione con `@skill` — si registra da sola come tool LLM all'avvio. 20 skill integrate | `tars/skills/` |
 | **LLM locale o cloud** | Cloud OpenAI, oppure qualsiasi server OpenAI-compatibile — Ollama, LM Studio, llama.cpp, vLLM — via `TARS_LLM_BASE_URL`. Un TARS completamente offline è possibile | `tars/llm.py` |
 | **Character card** | Personaggi intercambiabili in `characters/*.json` (inclusi TARS, CASE, KIPP): nome, persona, valori di default. "Diventa CASE" funziona a voce, da dashboard o API | `tars/characters.py` |
 | **Sequenze coreografate** | Routine di movimento con nome (greet, wiggle, patrol + le tue in `data/sequences.json`); "TARS, balla" → skill `perform` | `tars/movement/sequences.py` |

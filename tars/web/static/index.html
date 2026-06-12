@@ -65,8 +65,32 @@
       <button onclick="voice('ptt')">🎤 Talk</button>
       <button class="wide" id="micBtn" onclick="browserMic()">🎙 Browser mic</button>
     </div>
+    <h2>Calibration</h2>
+    <div class="grid" style="grid-template-columns:1fr 1fr">
+      <select id="calCh" class="cfg">
+        <option value="0">ch0 · lift</option><option value="1">ch1 · port drive</option>
+        <option value="2">ch2 · star drive</option><option value="3">ch3</option>
+        <option value="4">ch4</option><option value="5">ch5</option>
+        <option value="6">ch6</option><option value="7">ch7</option><option value="8">ch8</option>
+      </select>
+      <input id="calVal" class="cfg" type="number" min="130" max="680" value="350"
+             onchange="calDrive(0)">
+    </div>
+    <div class="grid" style="margin-top:6px">
+      <button onclick="calDrive(-10)">−10</button>
+      <button onclick="calDrive(-1)">−1</button>
+      <button onclick="calDrive(+1)">+1</button>
+    </div>
+    <div class="grid" style="margin-top:6px;grid-template-columns:1fr 2fr">
+      <button onclick="calDrive(+10)">+10</button>
+      <select id="calKey" class="cfg"><option value="">save as…</option></select>
+    </div>
+    <p style="font-size:11px;color:#5b6672;margin-top:6px">⚠ moves the servo live —
+      stop before a mechanical limit</p>
     <h2>Knowledge</h2>
-    <div id="facts" style="font-size:12px;color:#8b96a3;max-height:140px;overflow-y:auto"></div>
+    <canvas id="kgCanvas" width="230" height="150"
+            style="width:100%;background:var(--panel);border:1px solid var(--line);border-radius:8px"></canvas>
+    <div id="facts" style="font-size:12px;color:#8b96a3;max-height:110px;overflow-y:auto;margin-top:6px"></div>
     <h2>Gait training</h2>
     <canvas id="spark" width="230" height="48" style="width:100%;background:var(--panel);border:1px solid var(--line);border-radius:8px"></canvas>
     <div id="trainInfo" style="font-size:12px;color:#8b96a3"></div>
@@ -250,11 +274,73 @@ async function loadHistory() {
   } catch {}
 }
 
+async function calDrive(delta) {
+  const valBox = document.getElementById('calVal');
+  valBox.value = Math.max(130, Math.min(680, (+valBox.value || 350) + delta));
+  const saveKey = document.getElementById('calKey').value;
+  const r = await fetch('/api/calibrate', {method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({channel: +document.getElementById('calCh').value,
+                          value: +valBox.value, save_as: saveKey || undefined})});
+  if (r.ok && saveKey) document.getElementById('calKey').value = '';
+}
+async function loadCalKeys() {
+  try {
+    const s = await (await fetch('/api/settings')).json();
+    const sel = document.getElementById('calKey');
+    sel.innerHTML = '<option value="">save as…</option>' +
+      Object.keys(s.pwm || {}).sort().map(k => `<option>${k}</option>`).join('');
+  } catch {}
+}
+
+function drawKnowledgeGraph(triples) {
+  // a tiny force layout: entities are nodes, relations are edges
+  const canvas = document.getElementById('kgCanvas');
+  const g = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  g.clearRect(0, 0, W, H);
+  if (!triples.length) { g.fillStyle = '#5b6672'; g.font = '11px sans-serif';
+    g.fillText('no facts yet — tell TARS something worth remembering', 10, H/2); return; }
+  const names = [...new Set(triples.flatMap(t => [t.s, t.o]))].slice(0, 18);
+  const nodes = names.map((name, i) => ({ name,
+    x: W/2 + Math.cos(i*2.39) * (40 + (i%5)*14),
+    y: H/2 + Math.sin(i*2.39) * (28 + (i%4)*10), vx:0, vy:0 }));
+  const byName = Object.fromEntries(nodes.map(n => [n.name, n]));
+  const edges = triples.filter(t => byName[t.s] && byName[t.o])
+                       .map(t => [byName[t.s], byName[t.o]]);
+  for (let iter = 0; iter < 120; iter++) {           // settle the layout
+    for (const a of nodes) for (const b of nodes) {
+      if (a === b) continue;
+      const dx = a.x-b.x, dy = a.y-b.y, d2 = Math.max(60, dx*dx+dy*dy);
+      a.vx += dx/d2*120; a.vy += dy/d2*120;
+    }
+    for (const [a,b] of edges) {
+      const dx = b.x-a.x, dy = b.y-a.y;
+      a.vx += dx*0.01; a.vy += dy*0.01; b.vx -= dx*0.01; b.vy -= dy*0.01;
+    }
+    for (const n of nodes) {
+      n.x = Math.max(14, Math.min(W-14, n.x + n.vx)); n.vx *= 0.6;
+      n.y = Math.max(12, Math.min(H-12, n.y + n.vy)); n.vy *= 0.6;
+    }
+  }
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--acc').trim() || '#62d0ff';
+  g.strokeStyle = '#2a3540';
+  for (const [a,b] of edges) { g.beginPath(); g.moveTo(a.x,a.y); g.lineTo(b.x,b.y); g.stroke(); }
+  g.font = '9px sans-serif';
+  for (const n of nodes) {
+    g.fillStyle = accent; g.beginPath(); g.arc(n.x, n.y, 3, 0, 7); g.fill();
+    g.fillStyle = '#aab6c2';
+    g.fillText(n.name.slice(0, 14), n.x + 5, n.y + 3);
+  }
+}
+
 async function loadFacts() {
   try {
     const data = await (await fetch('/api/knowledge')).json();
-    document.getElementById('facts').innerHTML = (data.triples || []).slice(-15).reverse()
+    const triples = data.triples || [];
+    document.getElementById('facts').innerHTML = triples.slice(-15).reverse()
       .map(t => `• ${t.s} <i>${t.r}</i> ${t.o}`).join('<br>') || '(none yet)';
+    drawKnowledgeGraph(triples.slice(-30));
   } catch {}
 }
 
@@ -326,7 +412,7 @@ async function poll() {
     document.getElementById('status').textContent = line;
   } catch { document.getElementById('status').textContent = 'offline'; }
 }
-loadSettings(); poll(); loadFacts(); loadCharacters(); loadTraining(); loadHistory();
+loadSettings(); poll(); loadFacts(); loadCharacters(); loadTraining(); loadHistory(); loadCalKeys();
 setInterval(poll, 3000); setInterval(loadFacts, 10000); setInterval(loadTraining, 10000);
 </script>
 </body>

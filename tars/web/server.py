@@ -137,6 +137,31 @@ def create_app(s: Settings, brain: Brain, gaits, voice: VoiceLoop) -> Flask:
         threading.Thread(target=getattr(gaits, action), daemon=True).start()
         return jsonify(ok=True, action=action)
 
+    @app.post("/api/calibrate")
+    def calibrate():
+        """Web servo calibration (the dashboard's Calibration panel):
+        drive a raw PWM value on a channel, optionally save it into the
+        named slot of the persisted calibration."""
+        body = request.json or {}
+        try:
+            channel = int(body["channel"])
+            value = max(130, min(680, int(body["value"])))
+        except (KeyError, TypeError, ValueError):
+            return jsonify(error="need integer channel and value"), 400
+        if not 0 <= channel <= 15:
+            return jsonify(error="channel out of range"), 400
+        if gaits is None:
+            return jsonify(error="no hardware"), 503
+        gaits.d.set_pwm(channel, value)
+        key = body.get("save_as")
+        if key:
+            if key not in s.pwm:
+                return jsonify(error=f"unknown calibration key {key}"), 400
+            s.pwm[key] = value
+            s.save()
+        return jsonify(ok=True, channel=channel, value=value,
+                       saved=key or None, keys=sorted(s.pwm))
+
     @app.get("/api/settings")
     def get_settings():
         return jsonify(s.public())
