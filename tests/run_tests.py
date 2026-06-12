@@ -968,6 +968,29 @@ def test_setup_banner_and_status_flag():
     assert "setupBanner" in page and "llm_configured" in page
 
 
+def test_release_identity():
+    import subprocess
+    import tars
+    assert tars.__codename__ == "Endurance"
+    out = subprocess.run([sys.executable, "-m", "tars.app", "--version"],
+                         capture_output=True, text=True,
+                         cwd=Path(__file__).resolve().parent.parent,
+                         env={**os.environ, "TARS_SIM": "1"})
+    assert tars.__codename__ in out.stdout
+    ctx = make_ctx()
+    brain = Brain(settings, ctx.memory, ctx)
+    spk = Speaker(settings)
+    spk.muted = True
+    app = create_app(settings, brain, ctx.gaits, VoiceLoop(settings, brain, spk))
+    status = app.test_client().get("/api/status").json
+    assert status["version"] == tars.__version__
+    assert status["codename"] == tars.__codename__
+    assert "ENDURANCE" in open("deploy/os-stage/00-tarsgpt/files/motd").read()
+    assert "files/motd" in open("deploy/os-stage/00-tarsgpt/02-run.sh").read()
+    from tars.app import BANNER
+    assert "{codename}" in BANNER
+
+
 def test_os_appliance_artifacts():
     import subprocess
     assert subprocess.run(["bash", "-n", "install.sh"]).returncode == 0

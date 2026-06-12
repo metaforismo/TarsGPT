@@ -96,7 +96,7 @@ function rbox(w, h, d, material, r = 0.025) {
 
 // ---------- live terminal screen (CanvasTexture) ----------
 const TERM_LINES = [
-  "TARS OS v1.0.0 — boot",
+  "TARSGPT OS · ENDURANCE — boot",
   "i2c: PCA9685 @0x40 ......... OK",
   "i2c: MPU-6050 @0x68 ........ OK",
   "servo rail ........... 6.20 V",

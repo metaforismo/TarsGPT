@@ -40,6 +40,7 @@
   <div class="row"><span>POWER</span><span id="power">—</span></div>
   <div class="row"><span>CORE TEMP</span><span id="temp">—</span></div>
   <div class="row"><span>TIME</span><span id="clock">—</span></div>
+  <div class="row"><span>OS</span><span id="osver">—</span></div>
   <p>&gt; standing by <span id="cursor"></span></p>
 
 <script>
@@ -86,6 +87,8 @@ async function tick() {
       st.battery_pct == null ? 'EXTERNAL' : st.battery_pct + '%';
     document.getElementById('temp').textContent =
       st.cpu_temp == null ? '—' : st.cpu_temp + '°C';
+    if (st.version) document.getElementById('osver').textContent =
+      'TARSGPT ' + st.version + ' · ' + (st.codename || '').toUpperCase();
   } catch { document.getElementById('voice').textContent = 'OFFLINE'; }
 }
 tick(); setInterval(tick, 2000);

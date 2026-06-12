@@ -1,0 +1,12 @@
+
+  _____  _    ____  ____
+ |_   _|/ \  |  _ \/ ___|     TarsGPT OS — codename ENDURANCE
+   | | / _ \ | |_) \___ \     a walking, talking TARS from Interstellar
+   | |/ ___ \|  _ < ___) |
+   |_/_/   \_\_| \_\____/     humor 75% · honesty 90%
+
+   dashboard   http://tars.local:8000
+   logs        journalctl -u tars -f
+   self-test   /home/pi/TarsGPT/.venv/bin/tars --doctor
+   configure   /home/pi/TarsGPT/.env   (or tarsgpt.env on the boot partition)
+

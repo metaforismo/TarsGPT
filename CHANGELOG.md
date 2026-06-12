@@ -2,6 +2,21 @@
 
 All notable changes to TarsGPT. Dates are merge dates.
 
+## 1.4.0 — Endurance — 2026-06
+
+The identity release: TarsGPT OS gets a name and a face.
+
+- **Release codenames** from the Interstellar universe, starting with
+  **Endurance** (`__codename__`): shown in the GitHub release title,
+  `tars --version`, `/api/status`, the onboard display ("OS" row) and the
+  3D model's boot log on the website
+- **OS MOTD**: SSH into TarsGPT OS and you're greeted by the TARS ASCII
+  banner with dashboard URL, log and self-test commands
+- **Startup banner**: `python -m tars.app` prints the same identity card
+- Codename queue documented in CONTRIBUTING (Endurance -> Gargantua ->
+  Lazarus -> Miller -> Mann -> Edmunds -> Cooper -> Murph)
+- Suite at 71 tests
+
 ## 1.3.0 — 2026-06
 
 OS polish — flash-and-go:

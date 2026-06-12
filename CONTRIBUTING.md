@@ -49,3 +49,8 @@ Releases are automatic: bump `__version__` in `tars/__init__.py` and
 **Release** workflow creates the tag and the GitHub Release with the
 CHANGELOG notes (and skips silently if that version is already released).
 Manual dispatch from the Actions tab also works.
+
+**Codenames**: each minor release carries a name from the *Interstellar*
+universe, set in `__codename__` (it shows up in the release title, `tars
+--version`, `/api/status`, the onboard display and the OS MOTD). The queue:
+Endurance → Gargantua → Lazarus → Miller → Mann → Edmunds → Cooper → Murph.
