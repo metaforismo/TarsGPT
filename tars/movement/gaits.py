@@ -9,7 +9,6 @@ import json
 import logging
 import math
 import threading
-import time
 from .driver import ServoDriver
 from ..config import DATA_DIR, Settings
 
@@ -83,7 +82,7 @@ class Gaits:
         direction = 1 if end > start else -1
         for i in range(1, steps + 1):
             self.d.set_pwm(channel, start + direction * i)
-            time.sleep(self._eased_delay(delay, i, steps))
+            self.d.sleep(self._eased_delay(delay, i, steps))
 
     def _sweep_pair(self, ch_a, start_a, end_a, ch_b, start_b, end_b, delay):
         """Sweep two channels in lockstep. Ranges may be asymmetric: both
@@ -95,7 +94,7 @@ class Gaits:
         for i in range(1, steps + 1):
             self.d.set_pwm(ch_a, start_a + round((end_a - start_a) * i / steps))
             self.d.set_pwm(ch_b, start_b + round((end_b - start_b) * i / steps))
-            time.sleep(self._eased_delay(delay, i, steps))
+            self.d.sleep(self._eased_delay(delay, i, steps))
 
     # ---------- torso ----------
 
@@ -127,11 +126,16 @@ class Gaits:
         d1, d2 = (0.001, 0.001) if slow else (0.00005, 0.00001)
         self._sweep(self.s.ch_center_lift, self.p["up_height"], self.p["down_height"], d1)
         if slow:
-            time.sleep(0.25)
+            self.d.sleep(0.25)
         self._sweep(self.s.ch_center_lift, self.p["down_height"], self.p["neutral_height"], d2)
 
     def torso_return(self, slow=False):
-        """Vertical + rotation back to neutral, in parallel."""
+        """Vertical + rotation back to neutral, in parallel (sequentially on
+        drivers that can't run concurrent sweeps, e.g. the physics sim)."""
+        if not getattr(self.d, "parallel_safe", True):
+            self._return_rotation(slow)
+            self._return_vertical(slow)
+            return
         t1 = threading.Thread(target=self._return_rotation, args=(slow,))
         t2 = threading.Thread(target=self._return_vertical, args=(slow,))
         t1.start()
@@ -175,6 +179,13 @@ class Gaits:
                 self._sweep(self.s.ch_center_lift, self.p["down_height"], self.p["up_height"], 0.001)
                 self._posed = True
             else:
+                if not getattr(self.d, "parallel_safe", True):
+                    self._sweep_pair(
+                        self.s.ch_port_drive, self.p["back_port"], self.p["neutral_port"],
+                        self.s.ch_star_drive, self.p["back_star"], self.p["neutral_star"], 0.01)
+                    self._return_vertical(True)
+                    self._posed = False
+                    return
                 t1 = threading.Thread(target=self._sweep_pair, args=(
                     self.s.ch_port_drive, self.p["back_port"], self.p["neutral_port"],
                     self.s.ch_star_drive, self.p["back_star"], self.p["neutral_star"], 0.01))

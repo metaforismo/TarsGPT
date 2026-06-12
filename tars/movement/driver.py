@@ -3,13 +3,20 @@
 Works with either the legacy Adafruit_PCA9685 library or the current
 adafruit-circuitpython-pca9685 stack. Without hardware (or with TARS_SIM=1)
 it logs movements instead, so the whole app can be developed off-robot.
+
+Drivers expose set_pwm/relax/sleep and a `parallel_safe` flag; the physics
+driver in tars.learn duck-types this interface, which is how the exact same
+Gaits code drives both the metal and the simulator.
 """
 import logging
+import time
 
 log = logging.getLogger("tars.servo")
 
 
 class ServoDriver:
+    parallel_safe = True  # concurrent sweeps from threads are fine on hardware
+
     def __init__(self, frequency: int = 60, sim: bool = False):
         self.sim = sim
         self._pca = None
@@ -53,3 +60,8 @@ class ServoDriver:
         """Stop driving a channel (servo goes limp)."""
         if not self.sim:
             self.set_pwm(channel, 0)
+
+    def sleep(self, seconds: float):
+        """Gait pacing. Real time here; the physics driver advances the
+        simulation clock instead."""
+        time.sleep(seconds)

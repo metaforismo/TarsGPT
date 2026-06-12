@@ -13,10 +13,15 @@ class TrainingLog:
                      "started": time.strftime("%Y-%m-%d %H:%M"),
                      "entries": []}
 
-    def record(self, iteration: int, reward: float, best: float):
-        self.data["entries"].append({"i": iteration,
-                                     "reward": round(float(reward), 4),
-                                     "best": round(float(best), 4)})
+    def record(self, iteration: int, reward: float, best: float,
+               params: dict | None = None):
+        entry = {"i": iteration,
+                 "reward": round(float(reward), 4),
+                 "best": round(float(best), 4)}
+        if params:
+            # kept so --correlate can replay real sessions through the sim
+            entry["params"] = {k: float(v) for k, v in params.items()}
+        self.data["entries"].append(entry)
         DATA_DIR.mkdir(parents=True, exist_ok=True)
         TRAINING_LOG_FILE.write_text(json.dumps(self.data, indent=2))
 

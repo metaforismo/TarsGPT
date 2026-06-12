@@ -2,6 +2,25 @@
 
 All notable changes to TarsGPT. Dates are merge dates.
 
+## 1.6.0 — 2026-06
+
+- **MuJoCo physics pre-filter** (`--reward mujoco`): the exact same Gaits
+  code drives a simplified physics model of TARS via a duck-typed driver
+  whose `sleep()` advances the simulation - ~30 ms per episode, thousands
+  of candidates per hour on a PC
+- **Domain randomization**: each candidate scored across N common worlds
+  (friction, servo strength, mass); reward = mean − 0.5·std for robustness
+- **Honesty check** (`--correlate`): Spearman rank correlation between
+  logged real sessions and the sim, with explicit trust thresholds;
+  training logs now store candidate parameters to enable it
+- Sim results are never auto-saved: the sim proposes, the real-robot
+  verification (`measured`/`camera`) disposes
+- Architecture: gait pacing now flows through `driver.sleep()`, and
+  parallel return phases run sequentially on non-thread-safe drivers
+- Suite grown to 49 tests (sim locomotion direction and sensitivity,
+  determinism with common random numbers, fall detection, Spearman, log
+  replay)
+
 ## 1.5.0 — 2026-06
 
 - **Stability tax**: during training the gyro is sampled while each

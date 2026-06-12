@@ -184,6 +184,38 @@ landscape (used by the test suite to verify the optimizer actually converges)
 — useful to dry-run the whole loop off-robot with `--sim`. **Ctrl-C is safe
 in every mode**: training stops and keeps the best gait found so far.
 
+### Physics pre-filter (MuJoCo): thousands of candidates before touching a servo
+
+```bash
+pip install mujoco        # on a PC, not the Pi
+python -m tars.learn --reward mujoco --iterations 300 --dr 6
+```
+
+The **same `Gaits` code** that drives the PCA9685 drives a simplified MuJoCo
+model of TARS (boxes, BOM-ballpark masses, MG996R-class actuators): the
+driver's `sleep()` advances physics instead of waiting, so the timing
+parameters keep their exact meaning while an episode costs ~30 ms. Every
+candidate walks in `--dr` **domain-randomized worlds** (friction 0.35–1.2,
+servo strength ±30%, mass ±20% — the same worlds for every candidate) and
+scores `mean − 0.5·std`: what survives every world has a chance of surviving
+reality.
+
+**The sim proposes, reality disposes.** Results are *not* auto-saved: take
+the winner to the real robot and confirm it with `--reward measured` or
+`camera`. And run the honesty check on your own build first:
+
+```bash
+python -m tars.learn --correlate
+```
+
+This replays the parameters from your logged real sessions through the sim
+and reports the Spearman rank correlation — **ρ ≥ 0.6**: useful pre-filter;
+**0.3–0.6**: coarse screening only; **below**: don't trust the sim on this
+build, train for real. (Sessions from v1.6 onward log the parameters needed
+for this.) Known limits, by design: no servo backlash, no battery sag, crude
+contact model — that's what the randomization and the real verification step
+are for.
+
 ## The onboard screen
 
 Point the robot's own browser at the readout for the full movie effect:

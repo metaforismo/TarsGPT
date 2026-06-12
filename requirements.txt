@@ -16,3 +16,6 @@ vosk>=0.3.45
 
 # Optional: camera reward for gait training (python -m tars.learn --reward camera)
 # opencv-python-headless
+
+# Optional: physics pre-filter on a PC (python -m tars.learn --reward mujoco)
+# mujoco

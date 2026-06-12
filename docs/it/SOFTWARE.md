@@ -187,6 +187,39 @@ converga davvero) — utile per provare l'intero loop a vuoto con `--sim`.
 **Ctrl-C è sicuro in ogni modalità**: l'allenamento si ferma conservando la
 miglior andatura trovata fin lì.
 
+### Pre-filtro fisico (MuJoCo): migliaia di candidate prima di toccare un servo
+
+```bash
+pip install mujoco        # su un PC, non sul Pi
+python -m tars.learn --reward mujoco --iterations 300 --dr 6
+```
+
+Lo **stesso codice `Gaits`** che pilota il PCA9685 pilota un modello MuJoCo
+semplificato di TARS (parallelepipedi, masse indicative dalla BOM, attuatori
+classe MG996R): la `sleep()` del driver fa avanzare la fisica invece di
+aspettare, così i parametri di timing mantengono il loro significato esatto
+mentre un episodio costa ~30 ms. Ogni candidata cammina in `--dr` **mondi
+randomizzati** (attrito 0,35–1,2, forza servo ±30%, massa ±20% — gli stessi
+mondi per tutte le candidate) e il punteggio è `media − 0,5·deviazione`: ciò
+che sopravvive a ogni mondo ha una chance di sopravvivere alla realtà.
+
+**Il sim propone, la realtà dispone.** I risultati *non* vengono salvati
+automaticamente: porta la vincitrice sul robot vero e confermala con
+`--reward measured` o `camera`. E prima esegui il controllo di onestà sulla
+tua build:
+
+```bash
+python -m tars.learn --correlate
+```
+
+Rigioca i parametri delle tue sessioni reali loggati nel sim e riporta la
+correlazione di rango di Spearman — **ρ ≥ 0,6**: pre-filtro utile;
+**0,3–0,6**: solo screening grossolano; **sotto**: non fidarti del sim su
+questa build, allena dal vero. (Le sessioni dalla v1.6 in poi loggano i
+parametri necessari.) Limiti noti, voluti: niente backlash dei servo, niente
+sag della batteria, contatti rozzi — è per questo che esistono la
+randomizzazione e la verifica reale.
+
 ## Lo schermo di bordo
 
 Punta il browser del robot sul readout per l'effetto film completo:

@@ -615,6 +615,91 @@ def test_display_waveform_markup():
     assert 'id="wave"' in page and "voiceState" in page
 
 
+def test_mujoco_driver_and_locomotion():
+    try:
+        import mujoco  # noqa: F401
+    except ImportError:
+        print("  (mujoco missing, skipped)")
+        return
+    from tars.learn.mujoco_sim import MujocoDriver
+    driver = MujocoDriver(settings)
+    assert driver.parallel_safe is False
+    t0 = driver.d.time
+    driver.sleep(0.1)
+    assert abs((driver.d.time - t0) - 0.1) < 0.01   # sleep advances physics
+    driver.set_pwm(99, 400)                          # unknown channel ignored
+    # the baseline gait must walk FORWARD in the default world
+    gaits = Gaits(driver, settings)
+    x0 = driver.torso_x
+    for _ in range(3):
+        gaits.step_forward()
+    driver.sleep(0.4)
+    per_step = (driver.torso_x - x0) * 100 / 3
+    assert 0.2 < per_step < 2.0, f"{per_step:.2f} cm/step"
+    assert driver.upright is True
+    # tipping the torso must be detected
+    driver.d.qpos[3:7] = [0.7071, 0.7071, 0, 0]      # 90 deg roll
+    import mujoco as mj
+    mj.mj_forward(driver.m, driver.d)
+    assert driver.upright is False
+
+
+def test_mujoco_reward_deterministic_and_randomized():
+    try:
+        import mujoco  # noqa: F401
+    except ImportError:
+        print("  (mujoco missing, skipped)")
+        return
+    from tars.learn.mujoco_reward import MujocoReward
+    from tars.movement.gaits import DEFAULT_GAIT_PARAMS
+    reward = MujocoReward(settings, steps=2, randomizations=3, seed=11)
+    assert len(reward.worlds) == 3
+    assert reward.worlds[0] != reward.worlds[1]      # worlds actually differ
+    a = reward(dict(DEFAULT_GAIT_PARAMS))
+    b = MujocoReward(settings, steps=2, randomizations=3,
+                     seed=11)(dict(DEFAULT_GAIT_PARAMS))
+    assert a == b                                    # common random numbers
+    assert -10 < a < 10 and a == a                   # finite, sane
+
+
+def test_spearman_and_correlate():
+    from tars.learn.correlate import spearman, correlate_log, verdict
+    assert abs(spearman([1, 2, 3, 4], [10, 20, 30, 40]) - 1.0) < 1e-9
+    assert abs(spearman([1, 2, 3, 4], [40, 30, 20, 10]) + 1.0) < 1e-9
+    assert abs(spearman([1, 2, 2, 4], [1, 2, 2, 4]) - 1.0) < 1e-9  # ties
+    try:
+        spearman([1, 2], [1, 2])
+        raise AssertionError("accepted too few samples")
+    except ValueError:
+        pass
+    # replaying a log through the SAME function must give rho = 1
+    from tars.learn import SimReward
+    sim = SimReward(noise=0.0)
+    from tars.learn import GaitOptimizer, SEARCH_SPACE
+    start = {spec.name: spec.lo for spec in SEARCH_SPACE}
+    result = GaitOptimizer(sim, seed=4).optimize(start=start, iterations=8)
+    log_data = {"entries": [{"params": p, "reward": r}
+                            for p, r in result.history]}
+    rho, n = correlate_log(sim, log_data)
+    assert abs(rho - 1.0) < 1e-9 and n == 9
+    assert "useful" in verdict(0.8) and "real" in verdict(0.1)
+    try:
+        correlate_log(sim, {"entries": [{"reward": 1.0}] * 5})  # no params
+        raise AssertionError("accepted entries without params")
+    except ValueError:
+        pass
+
+
+def test_training_log_stores_params():
+    from tars.learn import TrainingLog
+    from tars.learn.training_log import TRAINING_LOG_FILE
+    train_log = TrainingLog("measured")
+    train_log.record(1, 3.0, 3.0, params={"lift_delay": 0.001})
+    loaded = TrainingLog.load()
+    assert loaded["entries"][0]["params"]["lift_delay"] == 0.001
+    TRAINING_LOG_FILE.unlink()
+
+
 def test_measured_reward_flow():
     """MeasuredReward must drive the robot and parse the operator's input."""
     from tars.learn import MeasuredReward

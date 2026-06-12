@@ -50,10 +50,42 @@ def calibrate_camera(input_fn=input, print_fn=print, capture_fn=None):
     return 0
 
 
+def correlate(args):
+    """Replay logged real evaluations through the sim: the honesty check."""
+    from .correlate import correlate_log, verdict
+    from .mujoco_reward import MujocoReward
+    from .training_log import TrainingLog
+    log_data = TrainingLog.load()
+    if log_data is None:
+        print("No training log found - run a real session first "
+              "(--reward measured or camera).")
+        return 1
+    if log_data.get("mode") not in ("measured", "camera"):
+        print(f"Warning: last logged session was '{log_data.get('mode')}', "
+              "not a real-robot one; correlation against it is circular.")
+    reward_fn = MujocoReward(settings, steps=args.steps,
+                             randomizations=args.dr, seed=args.seed or 0)
+    try:
+        rho, n = correlate_log(reward_fn, log_data)
+    except ValueError as e:
+        print(f"Cannot correlate: {e}")
+        return 1
+    print(f"Spearman rank correlation sim vs real over {n} evaluations: "
+          f"rho = {rho:+.2f}")
+    print(f"Verdict: {verdict(rho)}")
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(description="TARS gait optimizer")
-    parser.add_argument("--reward", choices=["measured", "camera", "sim"],
+    parser.add_argument("--reward", choices=["measured", "camera", "mujoco", "sim"],
                         default="measured")
+    parser.add_argument("--dr", type=int, default=6,
+                        help="randomized worlds per candidate for --reward "
+                             "mujoco (default 6)")
+    parser.add_argument("--correlate", action="store_true",
+                        help="replay logged real sessions through the MuJoCo "
+                             "reward and report rank correlation")
     parser.add_argument("--iterations", type=int, default=12,
                         help="candidate gaits to try (default 12)")
     parser.add_argument("--steps", type=int, default=3,
@@ -80,6 +112,8 @@ def main():
 
     if args.calibrate_camera:
         return calibrate_camera()
+    if args.correlate:
+        return correlate(args)
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     gaits = Gaits(ServoDriver(settings.pwm_frequency,
@@ -89,6 +123,14 @@ def main():
         reward_fn = MeasuredReward(gaits, steps=args.steps)
         print(f"Gait training: {args.iterations} candidates x {args.steps} steps.")
         print("You need ~2 m of free floor and a tape measure (or floor tiles).")
+    elif args.reward == "mujoco":
+        from .mujoco_reward import MujocoReward
+        reward_fn = MujocoReward(settings, steps=args.steps,
+                                 randomizations=args.dr, seed=args.seed,
+                                 print_fn=print)
+        print(f"Sim pre-filter: {args.iterations} candidates x {args.steps} "
+              f"steps x {args.dr} randomized worlds. The sim proposes - "
+              "verify the winner on the real robot before trusting it.")
     elif args.reward == "camera":
         from .vision_reward import CameraReward
         reward_fn = CameraReward(gaits, steps=args.steps, axis=args.camera_axis)
@@ -114,7 +156,8 @@ def main():
     optimizer = GaitOptimizer(reward_fn, seed=args.seed)
     result = optimizer.optimize(
         start=dict(gaits.gp), iterations=args.iterations,
-        on_step=lambda i, _params, reward, best: train_log.record(i, reward, best))
+        on_step=lambda i, params, reward, best:
+            train_log.record(i, reward, best, params=params))
 
     print(f"\nBest reward: {result.best_reward:.3f}")
     print("Best parameters:")
@@ -125,6 +168,9 @@ def main():
         gaits.apply_gait_params(result.best_params)
         gaits.save_gait_params()
         print("Saved to data/gait_params.json - active from the next start.")
+    elif args.reward == "mujoco":
+        print("(sim result NOT saved: verify the winner on the robot with "
+              "--reward measured/camera, or force with --save)")
     else:
         print("(dry run: pass --save to persist)")
 

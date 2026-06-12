@@ -15,6 +15,7 @@ TarsGPT is a **complete, self-contained robot project**: an original Python runt
 - 🎭 **Character cards** — switch between TARS, CASE and KIPP (or your own) by voice or dashboard
 - 🕺 **Choreographed sequences** — greet, wiggle, patrol or your own routines ("TARS, do a little dance")
 - 🧬 **Gait learning** — verifiable-reward optimization: the robot walks, you measure, it learns your floor (`python -m tars.learn`)
+- 🪐 **Physics pre-filter** — the same gait code runs in a domain-randomized MuJoCo sim: thousands of candidates per hour, honesty-checked against your real sessions (`--reward mujoco`, `--correlate`)
 - 💬 **Continuous conversation** — after answering, TARS keeps listening so you can reply without the wake word
 - 📟 **Onboard display** — movie-style `/display` readout for the robot's DSI screen (kiosk mode)
 - 🕸️ **Knowledge graph** — structured facts ("Francesco owns a P1S") learned, deduplicated, persisted and injected when relevant
@@ -101,6 +102,7 @@ TarsGPT è un **progetto robot completo e autonomo**: un runtime Python original
 - 🎭 **Character card** — passa da TARS a CASE a KIPP (o ai tuoi) a voce o da dashboard
 - 🕺 **Sequenze coreografate** — greet, wiggle, patrol o le tue routine ("TARS, balla")
 - 🧬 **Apprendimento dell'andatura** — ottimizzazione con reward verificabile: il robot cammina, tu misuri, lui impara il tuo pavimento (`python -m tars.learn`)
+- 🪐 **Pre-filtro fisico** — lo stesso codice d'andatura gira in un sim MuJoCo con domain randomization: migliaia di candidate l'ora, con controllo di onestà sulle tue sessioni reali (`--reward mujoco`, `--correlate`)
 - 💬 **Conversazione continua** — dopo la risposta TARS resta in ascolto: replichi senza ripetere la wake word
 - 📟 **Schermo di bordo** — readout `/display` in stile film per il display DSI del robot (modalità kiosk)
 - 🕸️ **Knowledge graph** — fatti strutturati ("Francesco possiede una P1S") appresi, deduplicati, persistenti e iniettati quando rilevanti
