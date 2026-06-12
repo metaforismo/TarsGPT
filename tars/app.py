@@ -23,6 +23,14 @@ from .speakerid import SpeakerID
 from .speech import Speaker
 from .voice import VoiceLoop
 
+BANNER = r"""
+  _____  _    ____  ____
+ |_   _|/ \  |  _ \/ ___|    TarsGPT {version} · {codename}
+   | | / _ \ | |_) \___ \    humor {humor}%  ·  honesty {honesty}%
+   | |/ ___ \|  _ < ___) |   dashboard  http://<this-host>:{port}
+   |_/_/   \_\_| \_\____/    docs  github.com/metaforismo/TarsGPT
+"""
+
 
 def make_fall_watchdog(imu, gaits, speaker, confirmations: int = 2):
     """Runtime balance guard: if the IMU reports TARS not-upright for a few
@@ -74,9 +82,9 @@ def battery_watchdog(speaker: Speaker):
 
 def main():
     parser = argparse.ArgumentParser(description="TARS robot runtime")
-    from . import __version__
+    from . import __version__, __codename__
     parser.add_argument("--version", action="version",
-                        version=f"TarsGPT {__version__}")
+                        version=f"TarsGPT {__version__} '{__codename__}'")
     parser.add_argument("--sim", action="store_true", help="simulate servos (no hardware)")
     parser.add_argument("--no-voice", action="store_true", help="disable the voice loop")
     parser.add_argument("--no-web", action="store_true", help="disable the web dashboard")
@@ -140,6 +148,9 @@ def main():
     log.info("%s online. Humor %d%%, honesty %d%%, %d skills.",
              settings.robot_name, settings.humor, settings.honesty,
              len(skills.REGISTRY))
+    print(BANNER.format(version=__version__, codename=__codename__,
+                        humor=settings.humor, honesty=settings.honesty,
+                        port=settings.web_port))
 
     if args.no_web:
         threading.Event().wait()  # keep daemon threads alive

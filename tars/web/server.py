@@ -11,7 +11,7 @@ import threading
 from pathlib import Path
 from flask import Flask, Response, jsonify, request, send_file, send_from_directory
 
-from .. import characters, stt, tts
+from .. import __codename__, __version__, characters, stt, tts
 from ..config import DATA_DIR, Settings
 from ..llm import Brain
 from ..skills.system import read_battery, read_cpu_temp, battery_percent
@@ -187,7 +187,8 @@ def create_app(s: Settings, brain: Brain, gaits, voice: VoiceLoop) -> Flask:
             name=s.robot_name, humor=s.humor, honesty=s.honesty,
             cpu_temp=read_cpu_temp(),
             battery_pct=battery_percent(battery["voltage"]) if battery else None,
-            llm_configured=bool(s.openai_api_key or s.llm_base_url))
+            llm_configured=bool(s.openai_api_key or s.llm_base_url),
+            version=__version__, codename=__codename__)
 
     @app.get("/api/memory")
     def memory():
