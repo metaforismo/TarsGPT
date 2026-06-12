@@ -6,7 +6,9 @@
 
 ![TARS](https://github.com/user-attachments/assets/cb7f6acf-b7c4-41ff-ab1a-2640e8610c68)
 
-TarsGPT is a **complete, self-contained robot project**: an original Python runtime (voice AI, personality, movement, web dashboard) plus full bilingual documentation to design, print, wire, assemble and finish a walking TARS-style robot.
+TarsGPT is a **complete, self-contained robot project**: an original Python runtime (voice AI, personality, movement, web dashboard) plus full bilingual documentation to design, print, wire, assemble and finish a walking TARS-style robot. Based on [**Charlie Diaz's original TARS replica**](https://www.hackster.io/charlesdiaz/how-to-build-your-own-replica-of-tars-from-interstellar-224833) — the idea that started it all — rebuilt as an original codebase and extended with everything below.
+
+🌐 **Website**: [tarsgpt.vercel.app](https://tarsgpt.vercel.app) — with an interactive 3D exploded view of the robot (source in [`site/`](site/), one-click deploy on Vercel)
 
 ## ✨ Features
 
@@ -87,13 +89,18 @@ docs/                # bilingual documentation (en/, it/)
 
 ## Credits & license
 
-Code in this repository: MIT (see [LICENSE](LICENSE)). The 3D-printable chassis files referenced in the build guide are by the TARS-AI Community (CC BY-NC 4.0) — required attribution for the printed parts only. TARS is a character from *Interstellar*; this is a non-commercial fan project.
+- **The idea**: [Charlie Diaz's original TARS replica](https://www.hackster.io/charlesdiaz/how-to-build-your-own-replica-of-tars-from-interstellar-224833) — this project started from his concept and grew into the full AI runtime, gait learning, balance-first design and documentation you see here.
+- **The printable chassis**: referenced from the [TARS-AI Community](https://github.com/TARS-AI-Community/TARS-AI) (CC BY-NC 4.0 — attribution required for the printed parts). The full STL set is downloaded from their repo; this repo ships one STEP reference file (`525125.STEP`).
+- **The code in this repository**: original implementation, MIT (see [LICENSE](LICENSE)).
+- TARS is a character from Christopher Nolan's *Interstellar*; this is a non-commercial fan project.
 
 ---
 
 # TarsGPT — Un Robot IA Completo Ispirato a TARS
 
-TarsGPT è un **progetto robot completo e autonomo**: un runtime Python originale (IA vocale, personalità, movimento, dashboard web) più documentazione bilingue completa per progettare, stampare, cablare, assemblare e rifinire un robot stile TARS che cammina.
+TarsGPT è un **progetto robot completo e autonomo**: un runtime Python originale (IA vocale, personalità, movimento, dashboard web) più documentazione bilingue completa per progettare, stampare, cablare, assemblare e rifinire un robot stile TARS che cammina. Basato sulla [**replica TARS originale di Charlie Diaz**](https://www.hackster.io/charlesdiaz/how-to-build-your-own-replica-of-tars-from-interstellar-224833) — l'idea da cui tutto è partito — ricostruita come codebase originale ed estesa con tutto ciò che segue.
+
+🌐 **Sito web**: [tarsgpt.vercel.app](https://tarsgpt.vercel.app) — con vista 3D interattiva esplodibile del robot (sorgente in [`site/`](site/))
 
 ## ✨ Funzionalità
 
@@ -146,4 +153,7 @@ Raspberry Pi 5 (8 GB) · driver servo PCA9685 · 4–6 servo MG996R + 4 MG90S ·
 
 ## Crediti e licenza
 
-Il codice di questa repository è MIT (vedi [LICENSE](LICENSE)). I file 3D del telaio citati nella guida sono della TARS-AI Community (CC BY-NC 4.0) — attribuzione necessaria solo per le parti stampate. TARS è un personaggio di *Interstellar*; questo è un fan project non commerciale.
+- **L'idea**: la [replica TARS originale di Charlie Diaz](https://www.hackster.io/charlesdiaz/how-to-build-your-own-replica-of-tars-from-interstellar-224833) — questo progetto è partito dal suo concept ed è cresciuto nel runtime IA completo, nell'apprendimento dell'andatura, nel design balance-first e nella documentazione che vedi qui.
+- **Il telaio stampabile**: riferito dalla [TARS-AI Community](https://github.com/TARS-AI-Community/TARS-AI) (CC BY-NC 4.0 — attribuzione necessaria per le parti stampate). Gli STL completi si scaricano dal loro repo; questa repo include un file STEP di riferimento (`525125.STEP`).
+- **Il codice di questa repository**: implementazione originale, MIT (vedi [LICENSE](LICENSE)).
+- TARS è un personaggio di *Interstellar* di Christopher Nolan; questo è un fan project non commerciale.
