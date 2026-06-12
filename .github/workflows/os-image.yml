@@ -1,10 +1,24 @@
 name: TarsGPT OS image
 
-# Builds a flashable Raspberry Pi OS Lite image with TarsGPT preinstalled:
-# flash it, add your wifi + API key, boot - TARS starts by itself.
+# Builds a flashable Raspberry Pi OS Lite image with TarsGPT preinstalled.
+# After flashing, drop `tarsgpt.env` (your .env) and `wifi.txt` (SSID on
+# line 1, password on line 2) onto the boot partition - first boot applies
+# them and TARS starts by itself. SSH is enabled (user/password below).
 # Experimental: run manually from the Actions tab (takes ~45-60 minutes).
 on:
   workflow_dispatch:
+    inputs:
+      password:
+        description: "Password for the 'pi' user"
+        required: false
+        default: "tars"
+      attach-to-release:
+        description: "Attach the image to the latest GitHub release"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
 
 jobs:
   build-image:
@@ -19,6 +33,7 @@ jobs:
           stage-list: stage0 stage1 stage2 ./deploy/os-stage
           hostname: tars
           username: pi
+          password: ${{ inputs.password }}
           release: bookworm
           compression: xz
           enable-pigen-cache: true
@@ -29,3 +44,11 @@ jobs:
           name: tarsgpt-os-image
           path: ${{ steps.build.outputs.image-path }}
           retention-days: 14
+      - name: Attach to latest release
+        if: inputs.attach-to-release == true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=$(gh release view --json tagName -q .tagName)
+          gh release upload "$TAG" "${{ steps.build.outputs.image-path }}" --clobber
+          echo "Attached to $TAG"

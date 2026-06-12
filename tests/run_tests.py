@@ -925,6 +925,49 @@ def test_remote_client():
     assert "triples" in tars.knowledge()
 
 
+def test_firstboot_configurator():
+    """Run the real first-boot script against temp dirs: .env install,
+    wifi profile generation, idempotent renames."""
+    import subprocess
+    boot = tempfile.mkdtemp(prefix="tars_boot_")
+    tars_dir = tempfile.mkdtemp(prefix="tars_home_")
+    wifi = tempfile.mkdtemp(prefix="tars_wifi_")
+    open(f"{boot}/tarsgpt.env", "w").write("OPENAI_API_KEY=sk-test\n")
+    open(f"{boot}/wifi.txt", "w").write("CasaNet\r\nsupersecret\r\n")
+    env = {**os.environ, "BOOT_DIR": boot, "TARS_DIR": tars_dir,
+           "WIFI_DIR": wifi, "TARS_UID": str(os.getuid())}
+    run = lambda: subprocess.run(  # noqa: E731
+        ["bash", "deploy/os-stage/00-tarsgpt/files/tars-firstboot.sh"],
+        env=env, capture_output=True, text=True)
+    result = run()
+    assert result.returncode == 0, result.stderr
+    assert open(f"{tars_dir}/.env").read() == "OPENAI_API_KEY=sk-test\n"
+    assert oct(os.stat(f"{tars_dir}/.env").st_mode)[-3:] == "600"
+    conn = open(f"{wifi}/tarsgpt-wifi.nmconnection").read()
+    assert "ssid=CasaNet" in conn and "psk=supersecret" in conn
+    assert "\r" not in conn                       # CRLF from Windows stripped
+    assert os.path.exists(f"{boot}/tarsgpt.env.applied")
+    assert not os.path.exists(f"{boot}/wifi.txt")
+    assert run().returncode == 0                  # second boot: no-op, no crash
+    # open network (no password line) gets no wifi-security block
+    open(f"{boot}/wifi.txt", "w").write("OpenNet\n")
+    run()
+    assert "wifi-security" not in open(f"{wifi}/tarsgpt-wifi.nmconnection").read()
+
+
+def test_setup_banner_and_status_flag():
+    ctx = make_ctx()
+    brain = Brain(settings, ctx.memory, ctx)
+    spk = Speaker(settings)
+    spk.muted = True
+    app = create_app(settings, brain, ctx.gaits, VoiceLoop(settings, brain, spk))
+    status = app.test_client().get("/api/status").json
+    assert status["llm_configured"] == bool(settings.openai_api_key
+                                            or settings.llm_base_url)
+    page = open("tars/web/static/index.html").read()
+    assert "setupBanner" in page and "llm_configured" in page
+
+
 def test_os_appliance_artifacts():
     import subprocess
     assert subprocess.run(["bash", "-n", "install.sh"]).returncode == 0

@@ -2,6 +2,22 @@
 
 All notable changes to TarsGPT. Dates are merge dates.
 
+## 1.3.0 — 2026-06
+
+OS polish — flash-and-go:
+
+- **First-boot configurator**: after flashing TarsGPT OS, drop
+  `tarsgpt.env` and `wifi.txt` on the SD card's boot partition from any
+  computer - first boot installs the config (0600), joins the wifi
+  (Windows CRLF tolerated, open networks supported), renames the files
+  `.applied` and starts TARS; idempotent on every boot
+- OS image: SSH enabled, configurable `pi` password, optional
+  attach-to-release workflow input
+- Dashboard shows a **setup banner** until an LLM is configured
+  (`llm_configured` in `/api/status`)
+- Suite at 70 tests (the first-boot script is executed for real against
+  temp dirs)
+
 ## 1.2.0 — 2026-06
 
 The "OS" release — everything needed to treat TARS as an appliance:
