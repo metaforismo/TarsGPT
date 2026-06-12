@@ -2,6 +2,17 @@
 
 All notable changes to TarsGPT. Dates are merge dates.
 
+## 1.8.1 — 2026-06
+
+Repo hygiene release.
+
+- **One-click releases**: `Release` workflow (Actions tab) creates the tag
+  and GitHub Release with notes extracted from this file
+- `workflow_dispatch` on CI (manual re-runs from the UI)
+- `CONTRIBUTING.md` (project scope, dev setup, PR checklist, release how-to)
+- Dependabot (pip + actions, weekly) and pre-commit config (ruff + basics)
+- `tars --version`
+
 ## 1.8.0 — 2026-06
 
 - **Lateral movement**: `strafe_left`/`strafe_right` composite gaits
