@@ -17,52 +17,52 @@
 
 | # | Articolo | Q.tà | Note |
 |---|---|---|---|
-| 1 | **Raspberry Pi 5** — consigliati 8 GB (minimo 4 GB) | 1 | Il cervello. Il Pi 5 è richiesto dallo stack software V3; un Pi 4 4GB+ funziona col fork latishab |
-| 2 | **Active Cooler ufficiale per Raspberry Pi 5** | 1 | Senza, il Pi 5 va in throttling |
-| 3 | **MicroSD 32–64 GB** (A2, es. SanDisk Extreme) | 1 | Per Raspberry Pi OS 64-bit |
-| 4 | **Pacco batteria Li-ion 12V ~3000 mAh + caricabatterie** | 1 | Alimentazione principale |
-| 5 | **Convertitore buck regolabile XL4015E DC 5A** | 1 | Abbassa i 12V per i servo — regola l'uscita a **6,2 V** |
-| 6 | **Regolatore di tensione USB DC 6A** (12V→5V USB) | 1 | Alimenta il Raspberry Pi |
-| 7 | **Micro interruttore a bilanciere** | 1 | Interruttore generale |
-| 8 | **Cavo USB-C o breakout board USB-C maschio** | 1 | Ingresso alimentazione del Pi (uno dei due) |
+| 1 | **Raspberry Pi 5** — consigliati 8 GB (minimo 4 GB) | 1 | Il cervello. Il Pi 5 è richiesto dallo stack software V3; un Pi 4 4GB+ funziona col fork latishab · [Compra](https://www.raspberrypi.com/products/raspberry-pi-5/) |
+| 2 | **Active Cooler ufficiale per Raspberry Pi 5** | 1 | Senza, il Pi 5 va in throttling · [Compra](https://www.raspberrypi.com/products/active-cooler/) |
+| 3 | **MicroSD 32–64 GB** (A2, es. SanDisk Extreme) | 1 | Per Raspberry Pi OS 64-bit · [Compra](https://www.amazon.com/s?k=sandisk+extreme+64gb+microsd+a2) |
+| 4 | **Pacco batteria Li-ion 12V ~3000 mAh + caricabatterie** | 1 | Alimentazione principale · [Compra](https://www.aliexpress.com/w/wholesale-12v-li-ion-battery-pack-3000mah.html) |
+| 5 | **Convertitore buck regolabile XL4015E DC 5A** | 1 | Abbassa i 12V per i servo — regola l'uscita a **6,2 V** · [Compra](https://www.aliexpress.com/w/wholesale-XL4015-buck-converter.html) |
+| 6 | **Regolatore di tensione USB DC 6A** (12V→5V USB) | 1 | Alimenta il Raspberry Pi · [Compra](https://www.aliexpress.com/w/wholesale-12v-to-5v-6a-usb-step-down.html) |
+| 7 | **Micro interruttore a bilanciere** | 1 | Interruttore generale · [Compra](https://www.aliexpress.com/w/wholesale-micro-rocker-switch.html) |
+| 8 | **Cavo USB-C o breakout board USB-C maschio** | 1 | Ingresso alimentazione del Pi (uno dei due) · [Compra](https://www.aliexpress.com/w/wholesale-usb-c-male-breakout-board.html) |
 
 ## 2. Movimento (servo e controllo)
 
 | # | Articolo | Q.tà | Note |
 |---|---|---|---|
-| 9 | **Driver PWM/servo 16 canali PCA9685** | 1 | Controller servo I2C (Adafruit o clone) |
-| 10 | **Servo MG996R a ingranaggi metallici** | 4 (6 con le braccia) | Gambe/torso. Comprane 1–2 di scorta: i cloni economici sono altalenanti |
-| 11 | **Micro servo MG90S** | 4 | Solo versione con braccia |
-| 12 | **Prolunghe servo 30 cm** | 6 | Solo versione con braccia |
-| 13 | **Cavi Dupont femmina-femmina 40 cm** | 8 | Cablaggio I2C + alimentazione |
-| 14 | **Cavo parallelo 2 conduttori 20 AWG** | ~2 m | Distribuzione alimentazione |
+| 9 | **Driver PWM/servo 16 canali PCA9685** | 1 | Controller servo I2C (Adafruit o clone) · [Compra](https://www.adafruit.com/product/815) |
+| 10 | **Servo MG996R a ingranaggi metallici** | 4 (6 con le braccia) | Gambe/torso. Comprane 1–2 di scorta: i cloni economici sono altalenanti · [Compra](https://www.aliexpress.com/w/wholesale-MG996R-servo.html) |
+| 11 | **Micro servo MG90S** | 4 | Solo versione con braccia · [Compra](https://www.aliexpress.com/w/wholesale-MG90S-servo.html) |
+| 12 | **Prolunghe servo 30 cm** | 6 | Solo versione con braccia · [Compra](https://www.aliexpress.com/w/wholesale-servo-extension-cable-30cm.html) |
+| 13 | **Cavi Dupont femmina-femmina 40 cm** | 8 | Cablaggio I2C + alimentazione · [Compra](https://www.aliexpress.com/w/wholesale-dupont-cable-female-female-40cm.html) |
+| 14 | **Cavo parallelo 2 conduttori 20 AWG** | ~2 m | Distribuzione alimentazione · [Compra](https://www.aliexpress.com/w/wholesale-20awg-2-conductor-wire.html) |
 
-> 💪 **Upgrade:** la build TARS-WIZARD usa 3× **LewanSoul LD-3015MG** (17 kg·cm) ad alta coppia al posto degli MG996R — camminata più forte e fluida, costo leggermente superiore.
+> 💪 **Upgrade:** la build TARS-WIZARD usa 3× **LewanSoul LD-3015MG** (17 kg·cm, [Compra](https://www.aliexpress.com/item/32787763122.html)) ad alta coppia al posto degli MG996R — camminata più forte e fluida, costo leggermente superiore.
 >
-> 🧭 **Sensore opzionale:** un **IMU MPU-6050** (~3 €, I2C) rileva orientamento/cadute — **supportato**: se installato, il training dell'andatura penalizza le cadute automaticamente (sessioni completamente non supervisionate).
+> 🧭 **Sensore opzionale:** un **IMU MPU-6050** (~3 €, I2C, [Compra](https://www.aliexpress.com/w/wholesale-MPU-6050-module.html)) rileva orientamento/cadute — **supportato**: se installato, il training dell'andatura penalizza le cadute automaticamente (sessioni completamente non supervisionate).
 
 ## 3. Display, audio e visione
 
 | # | Articolo | Q.tà | Note |
 |---|---|---|---|
-| 15 | **Touchscreen DSI 5"** — uno tra: UeeKKoo 1024×600, Hosyond 800×480, Waveshare 800×480 | 1 | DSI, non HDMI — è quello che entra nel telaio V3 |
-| 16 | **Cavo flat DSI 200 mm** | 1 | Opzionale ma facilita l'assemblaggio |
-| 17 | **Modulo camera OV5647 5 MP** | 1 | Per visione / riconoscimento volti |
-| 18 | **Scheda audio USB** | 1 | Il Pi 5 non ha jack audio |
-| 19 | **Altoparlante 8 Ω 5 W** | 1 | La voce di TARS |
-| 20 | **Microfono USB** (mini) | 1 | Comandi vocali / wake word |
+| 15 | **Touchscreen DSI 5"** — uno tra: UeeKKoo 1024×600, Hosyond 800×480, Waveshare 800×480 | 1 | DSI, non HDMI — è quello che entra nel telaio V3 · [Compra](https://www.aliexpress.com/w/wholesale-5-inch-dsi-display-raspberry-pi.html) |
+| 16 | **Cavo flat DSI 200 mm** | 1 | Opzionale ma facilita l'assemblaggio · [Compra](https://www.aliexpress.com/w/wholesale-dsi-ribbon-cable-raspberry-pi-5.html) |
+| 17 | **Modulo camera OV5647 5 MP** | 1 | Per visione / riconoscimento volti · [Compra](https://www.aliexpress.com/w/wholesale-OV5647-camera-module.html) |
+| 18 | **Scheda audio USB** | 1 | Il Pi 5 non ha jack audio · [Compra](https://www.aliexpress.com/w/wholesale-usb-sound-card.html) |
+| 19 | **Altoparlante 8 Ω 5 W** | 1 | La voce di TARS · [Compra](https://www.aliexpress.com/w/wholesale-8ohm-5w-speaker.html) |
+| 20 | **Microfono USB** (mini) | 1 | Comandi vocali / wake word · [Compra](https://www.aliexpress.com/w/wholesale-mini-usb-microphone.html) |
 
 ## 4. Minuteria di assemblaggio
 
 | # | Articolo | Q.tà | Note |
 |---|---|---|---|
-| 21 | **Kit viti M3 assortite** (varie lunghezze, con dadi) | 1–2 kit | Le più usate: M3×16 e M3×20 |
-| 22 | **Magneti tondi 10×3 mm** | 4 | Versione con braccia — aggancio magnetico delle mani |
-| 23 | **Fascette in velcro 15 cm** | 2 | Fissaggio batteria |
-| 24 | **Kit guaina termorestringente** | 1 | Cablaggio pulito |
-| 25 | **Connettori faston** | 2 | Collegamenti batteria/interruttore |
-| 26 | **Sensore corrente/tensione INA260** | 1 | *Opzionale* — monitoraggio batteria (unico componente che richiede saldatura) |
-| 27 | **Gamepad Bluetooth 8BitDo Zero 2** | 1 | *Opzionale* — guida manuale col codice di questa repo |
+| 21 | **Kit viti M3 assortite** (varie lunghezze, con dadi) | 1–2 kit | Le più usate: M3×16 e M3×20 · [Compra](https://www.aliexpress.com/w/wholesale-m3-screw-assortment-kit.html) |
+| 22 | **Magneti tondi 10×3 mm** | 4 | Versione con braccia — aggancio magnetico delle mani · [Compra](https://www.aliexpress.com/w/wholesale-neodymium-magnet-10x3mm.html) |
+| 23 | **Fascette in velcro 15 cm** | 2 | Fissaggio batteria · [Compra](https://www.amazon.com/s?k=velcro+straps+6+inch) |
+| 24 | **Kit guaina termorestringente** | 1 | Cablaggio pulito · [Compra](https://www.aliexpress.com/w/wholesale-heat-shrink-tubing-kit.html) |
+| 25 | **Connettori faston** | 2 | Collegamenti batteria/interruttore · [Compra](https://www.aliexpress.com/w/wholesale-spade-connectors.html) |
+| 26 | **Sensore corrente/tensione INA260** | 1 | *Opzionale* — monitoraggio batteria (unico componente che richiede saldatura) · [Compra](https://www.adafruit.com/product/4226) |
+| 27 | **Gamepad Bluetooth 8BitDo Zero 2** | 1 | *Opzionale* — guida manuale col codice di questa repo · [Compra](https://www.aliexpress.com/item/1005006458561670.html) |
 
 ## 5. La stampante 3D — quale Bambu Lab comprare
 

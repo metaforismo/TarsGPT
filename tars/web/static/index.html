@@ -25,6 +25,9 @@
   button:hover { border-color:var(--acc); color:var(--acc); }
   label { display:flex; justify-content:space-between; font-size:13px; margin-top:8px; }
   input[type=range] { width:100%; accent-color:var(--acc); }
+  .cfg { width:100%; background:var(--panel); color:var(--fg); border:1px solid var(--line);
+         border-radius:8px; padding:7px 10px; font-size:13px; }
+  .cfg:focus { outline:1px solid var(--acc); }
   footer { display:flex; gap:8px; padding:12px 16px; border-top:1px solid var(--line); }
   #box { flex:1; background:var(--panel); border:1px solid var(--line); border-radius:8px;
          color:var(--fg); padding:10px 12px; font-size:15px; }
@@ -76,6 +79,20 @@
     <input type="range" id="honesty" min="0" max="100" onchange="saveSettings()">
     <label>Sarcasm <span id="sarcasmVal"></span></label>
     <input type="range" id="sarcasm" min="0" max="100" onchange="saveSettings()">
+    <h2>Configuration</h2>
+    <label style="display:block;margin-bottom:2px">Robot name</label>
+    <input type="text" id="cfgName" onchange="saveConfig()" class="cfg">
+    <label style="display:block;margin:8px 0 2px">Wake word</label>
+    <input type="text" id="cfgWake" onchange="saveConfig()" class="cfg">
+    <label style="display:block;margin:8px 0 2px">Language</label>
+    <select id="cfgLang" onchange="saveConfig()" class="cfg">
+      <option value="en">English</option><option value="it">Italiano</option>
+      <option value="es">Español</option><option value="fr">Français</option>
+      <option value="de">Deutsch</option><option value="pt">Português</option>
+      <option value="ja">日本語</option>
+    </select>
+    <p style="font-size:11px;color:#5b6672;margin-top:10px">Engines &amp; API keys are set in
+      <code>.env</code> — run <code>tars --doctor</code> to verify them.</p>
   </aside>
 </main>
 
@@ -248,6 +265,17 @@ async function loadSettings() {
     document.getElementById(k).value = s[k];
     document.getElementById(k + 'Val').textContent = s[k] + '%';
   }
+  document.getElementById('cfgName').value = s.robot_name;
+  document.getElementById('cfgWake').value = s.wake_word;
+  document.getElementById('cfgLang').value = s.language;
+}
+async function saveConfig() {
+  const body = { robot_name: document.getElementById('cfgName').value.trim(),
+                 wake_word: document.getElementById('cfgWake').value.trim().toLowerCase(),
+                 language: document.getElementById('cfgLang').value };
+  const r = await fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'},
+                                          body: JSON.stringify(body)});
+  if (r.ok) loadSettings();
 }
 async function saveSettings() {
   const body = {};

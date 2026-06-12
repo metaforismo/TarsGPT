@@ -795,6 +795,34 @@ def test_tls_context_resolution():
         settings.tls = False
 
 
+def test_dashboard_config_panel():
+    page = open("tars/web/static/index.html").read()
+    for needle in ("cfgName", "cfgWake", "cfgLang", "saveConfig"):
+        assert needle in page, needle
+    # the API behind it accepts identity fields
+    ctx = make_ctx()
+    brain = Brain(settings, ctx.memory, ctx)
+    spk = Speaker(settings)
+    spk.muted = True
+    app = create_app(settings, brain, ctx.gaits, VoiceLoop(settings, brain, spk))
+    old = (settings.robot_name, settings.wake_word, settings.language)
+    try:
+        data = app.test_client().post("/api/settings", json={
+            "robot_name": "BOT", "wake_word": "robot", "language": "it"}).json
+        assert (data["robot_name"], data["wake_word"], data["language"]) == \
+            ("BOT", "robot", "it")
+    finally:
+        settings.robot_name, settings.wake_word, settings.language = old
+        settings.save()
+
+
+def test_shopping_lists_have_buy_links():
+    for path, label in (("docs/en/SHOPPING_LIST.md", "[Buy]("),
+                        ("docs/it/LISTA_ACQUISTI.md", "[Compra](")):
+        text = open(path).read()
+        assert text.count(label) >= 27, f"{path}: {text.count(label)} links"
+
+
 def test_dashboard_restores_history():
     page = open("tars/web/static/index.html").read()
     assert "loadHistory" in page and "is speaking" in page
